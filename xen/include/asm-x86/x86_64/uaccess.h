@@ -48,7 +48,7 @@ extern void *xlat_malloc(unsigned long *xlat_page_current, size_t size);
     ((unsigned long)(addr) < HYPERVISOR_COMPAT_VIRT_START(d))
 
 #define __compat_access_ok(d, addr, size) \
-    __compat_addr_ok(d, (unsigned long)(addr) + ((size) ? (size) - 1 : 0))
+    __compat_addr_ok(d, (unsigned long)(addr) + (((size) != 0) ? (size) - 1 : 0))
 
 #define compat_access_ok(addr, size) \
     __compat_access_ok(current->domain, addr, size)

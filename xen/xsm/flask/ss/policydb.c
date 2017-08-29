@@ -1226,6 +1226,7 @@ static int role_read(struct policydb *p, struct hashtab *h, void *fp)
     __le32 buf[3];
     u32 len;
 
+    memset(buf, 0, sizeof(buf));
     role = xmalloc(struct role_datum);
     if ( !role )
     {
@@ -1391,6 +1392,7 @@ static int user_read(struct policydb *p, struct hashtab *h, void *fp)
     __le32 buf[3];
     u32 len;
 
+    memset(buf, 0, sizeof(buf));
     usrdatum = xmalloc(struct user_datum);
     if ( !usrdatum )
     {
