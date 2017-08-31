@@ -69,7 +69,8 @@ struct acpi_20_fadt Fadt = {
     .flags = (ACPI_PROC_C1 |
               ACPI_WBINVD |
               ACPI_FIX_RTC | ACPI_TMR_VAL_EXT |
-              ACPI_USE_PLATFORM_CLOCK),
+              ACPI_USE_PLATFORM_CLOCK |
+              ACPI_RESET_REG_SUP),
 
     .reset_reg = {
         .address_space_id    = ACPI_SYSTEM_IO,

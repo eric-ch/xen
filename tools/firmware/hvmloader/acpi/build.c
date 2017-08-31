@@ -73,9 +73,15 @@ static void set_checksum(
     p[checksum_offset] = -sum;
 }
 
-static uint8_t battery_port_exists(void)
+static uint8_t xen_acpi_pm_enabled(void)
 {
-    return (inb(0x88) == 0x1F);
+    uint8_t val;
+
+    val = inb(0x9C);
+    if ( !(val & 0x01) || (val == 0xff) )
+        return 0;
+
+    return 1;
 }
 
 static struct acpi_20_madt *construct_madt(struct acpi_info *info)
@@ -372,7 +378,7 @@ static int construct_secondary_tables(unsigned long *table_ptrs,
     if (!waet) return -1;
     table_ptrs[nr_tables++] = (unsigned long)waet;
 
-    if ( battery_port_exists() )
+    if ( xen_acpi_pm_enabled() )
     {
         ssdt = mem_alloc(sizeof(ssdt_pm), 16);
         if (!ssdt) return -1;
