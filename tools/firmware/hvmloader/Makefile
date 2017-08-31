@@ -59,6 +59,11 @@ endif
 
 ROMS := 
 
+ifneq ($(PXE_ROM),)
+ETHERBOOT_ROMS := $(PXE_ROM)
+ROMS += $(PXE_ROM)
+endif
+
 ifeq ($(CONFIG_OVMF),y)
 OBJS += ovmf.o
 CFLAGS += -DENABLE_OVMF
