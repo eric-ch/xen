@@ -120,6 +120,48 @@ void *xc_map_foreign_bulk_compat(xc_interface *xch, xc_osdep_handle h,
     return ret;
 }
 
+void *xc_map_foreign_batch_cacheattr(xc_interface *xch, uint32_t dom, int prot,
+                                     xen_pfn_t *arr, int num, int cache_type)
+{
+    int fd = xch->ops_handle;
+    privcmd_mmapbatch_t batch;
+    privcmd_mmapcacheattr_t cacheattr;
+    void *addr;
+    addr = mmap(NULL, num * PAGE_SIZE, prot, MAP_SHARED, fd, 0);
+    if ( addr == MAP_FAILED ) {
+        perror("xc_map_foreign_batch: mmap failed");
+        return NULL;
+    }
+
+    cacheattr.addr = (unsigned long)addr;
+    cacheattr.type = cache_type;
+
+    if ( ioctl(fd, IOCTL_PRIVCMD_MMAPCACHEATTR, &cacheattr) ) {
+        int saved_errno = errno;
+        perror("xc_map_foreign_batch_cacheattr: failed to set cache attributes");
+        (void)munmap(addr, num*PAGE_SIZE);
+        errno = saved_errno;
+        return NULL;
+    }
+
+    batch.num=num;
+    batch.dom=dom;
+    batch.addr=(unsigned long)addr;
+    batch.arr=arr;
+
+    if ( ioctl(fd, IOCTL_PRIVCMD_MMAPBATCH, &batch) < 0 )
+    {
+        int saved_errno = errno;
+        perror("xc_map_foreign_batch_cacheattr: ioctl failed");
+        (void)munmap(addr, num*PAGE_SIZE);
+        errno = saved_errno;
+        return NULL;
+    }
+    return addr;
+
+}
+
+
 /*
  * Local variables:
  * mode: C

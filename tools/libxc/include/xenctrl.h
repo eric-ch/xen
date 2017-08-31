@@ -1523,6 +1523,19 @@ void *xc_map_foreign_batch(xc_interface *xch, uint32_t dom, int prot,
 void *xc_map_foreign_bulk(xc_interface *xch, uint32_t dom, int prot,
                           const xen_pfn_t *arr, int *err, unsigned int num);
 
+enum {
+    XC_MAP_CACHEATTR_UC = XEN_DOMCTL_MEM_CACHEATTR_UC,
+    XC_MAP_CACHEATTR_WC = XEN_DOMCTL_MEM_CACHEATTR_WC,
+    XC_MAP_CACHEATTR_WT = XEN_DOMCTL_MEM_CACHEATTR_WT,
+    XC_MAP_CACHEATTR_WP = XEN_DOMCTL_MEM_CACHEATTR_WP,
+    XC_MAP_CACHEATTR_WB = XEN_DOMCTL_MEM_CACHEATTR_WB,
+    XC_MAP_CACHEATTR_UCM = XEN_DOMCTL_MEM_CACHEATTR_UCM
+};
+
+void *xc_map_foreign_batch_cacheattr(xc_interface *xch, uint32_t dom, int prot,
+                                     xen_pfn_t *arr, int num,
+                                     int cache_type);
+
 /**
  * Translates a virtual address in the context of a given domain and
  * vcpu returning the GFN containing the address (that is, an MFN for 

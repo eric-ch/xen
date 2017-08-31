@@ -75,6 +75,11 @@ typedef struct privcmd_mmapbatch_v2 {
 	int __user *err;  /* array of error codes */
 } privcmd_mmapbatch_v2_t;
 
+typedef struct privcmd_mmapcacheattr {
+       __u64 addr;
+       int type;
+} privcmd_mmapcacheattr_t;
+
 /*
  * @cmd: IOCTL_PRIVCMD_HYPERCALL
  * @arg: &privcmd_hypercall_t
@@ -88,5 +93,7 @@ typedef struct privcmd_mmapbatch_v2 {
 	_IOC(_IOC_NONE, 'P', 3, sizeof(privcmd_mmapbatch_t))
 #define IOCTL_PRIVCMD_MMAPBATCH_V2				\
 	_IOC(_IOC_NONE, 'P', 4, sizeof(privcmd_mmapbatch_v2_t))
+#define IOCTL_PRIVCMD_MMAPCACHEATTR                             \
+	_IOC(_IOC_NONE, 'P', 200, sizeof(privcmd_mmapcacheattr_t))
 
 #endif /* __LINUX_PUBLIC_PRIVCMD_H__ */
