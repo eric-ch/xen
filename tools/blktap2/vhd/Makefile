@@ -22,6 +22,7 @@ CFLAGS            += -static
 endif
 
 LIBS              := -Llib -lvhd
+LIBS              += -luuid -lcrypto
 
 all: subdirs-all build
 

@@ -18,13 +18,13 @@ CFLAGS          += -I../../include
 CFLAGS          += -D_GNU_SOURCE
 CFLAGS          += -fPIC
 
-ifeq ($(CONFIG_Linux),y)
 LIBS            := -luuid
-endif
 
 ifeq ($(CONFIG_LIBICONV),y)
 LIBS            += -liconv
 endif
+
+LIBS            += -lcrypto
 
 LIB-SRCS        := libvhd.c
 LIB-SRCS        += libvhd-journal.c
@@ -42,8 +42,10 @@ LIB-SRCS        += vhd-util-snapshot.c
 LIB-SRCS        += vhd-util-scan.c
 LIB-SRCS        += vhd-util-check.c
 LIB-SRCS        += vhd-util-uuid.c
+LIB-SRCS        += vhd-util-key.c
 LIB-SRCS        += relative-path.c
 LIB-SRCS        += atomicio.c
+LIB-SRCS        += xattr.c
 
 LIB-OBJS         = $(patsubst %.c,%.o,$(LIB-SRCS))
 LIB-OBJS        += $(LVM-UTIL-OBJ)
