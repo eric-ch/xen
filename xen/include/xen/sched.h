@@ -419,6 +419,9 @@ struct domain
 
     struct arch_domain arch;
 
+    /*Nb of cores exposed for cpuid, see XEN_DOMCTL_setcorespersocket*/
+    unsigned int cores_per_socket;
+
     void *ssid; /* sHype security subject identifier */
 
     /* Control-plane tools handle for this domain. */

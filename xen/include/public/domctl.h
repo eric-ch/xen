@@ -1063,6 +1063,13 @@ struct xen_domctl_psr_cat_op {
 typedef struct xen_domctl_psr_cat_op xen_domctl_psr_cat_op_t;
 DEFINE_XEN_GUEST_HANDLE(xen_domctl_psr_cat_op_t);
 
+#define XEN_DOMCTL_setcorespersocket  99
+struct xen_domctl_setcorespersocket {
+    uint32_t cores_per_socket;
+};
+typedef struct xen_domctl_setcorespersocket xen_domctl_setcorespersocket_t;
+DEFINE_XEN_GUEST_HANDLE(xen_domctl_setcorespersocket_t);
+
 struct xen_domctl {
     uint32_t cmd;
 #define XEN_DOMCTL_createdomain                   1
@@ -1165,6 +1172,7 @@ struct xen_domctl {
         struct xen_domctl_ioport_permission ioport_permission;
         struct xen_domctl_hypercall_init    hypercall_init;
         struct xen_domctl_settimeoffset     settimeoffset;
+        struct xen_domctl_setcorespersocket setcorespersocket;
         struct xen_domctl_disable_migrate   disable_migrate;
         struct xen_domctl_tsc_info          tsc_info;
         struct xen_domctl_hvmcontext        hvmcontext;

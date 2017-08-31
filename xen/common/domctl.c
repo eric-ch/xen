@@ -1123,6 +1123,21 @@ long do_domctl(XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
             copyback = 1;
         break;
 
+    case XEN_DOMCTL_setcorespersocket:
+    {
+        struct domain *d;
+
+        ret = -ESRCH;
+        d = rcu_lock_domain_by_id(op->domain);
+        if ( d != NULL )
+        {
+            d->cores_per_socket = op->u.setcorespersocket.cores_per_socket;
+            rcu_unlock_domain(d);
+            ret = 0;
+        }
+    }
+    break;
+
     default:
         ret = arch_do_domctl(op, d, u_domctl);
         break;

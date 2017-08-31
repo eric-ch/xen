@@ -776,6 +776,17 @@ int xc_domain_set_time_offset(xc_interface *xch,
     return do_domctl(xch, &domctl);
 }
 
+int xc_domain_set_cores_per_socket(xc_interface *xch,
+                                   uint32_t domid,
+                                   uint32_t cores_per_socket)
+{
+    DECLARE_DOMCTL;
+    domctl.cmd = XEN_DOMCTL_setcorespersocket;
+    domctl.domain = (domid_t)domid;
+    domctl.u.setcorespersocket.cores_per_socket = cores_per_socket;
+    return do_domctl(xch, &domctl);
+}
+
 int xc_domain_disable_migrate(xc_interface *xch, uint32_t domid)
 {
     DECLARE_DOMCTL;

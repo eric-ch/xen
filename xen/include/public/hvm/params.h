@@ -214,6 +214,11 @@
  */
 #define HVM_PARAM_X87_FIP_WIDTH 36
 
-#define HVM_NR_PARAMS 37
+/* XenClient specific hvm params */
+
+/* use Xci cpuid signature instead of standard Xen one */
+#define HVM_PARAM_XCI_CPUID_SIGNATURE 37
+
+#define HVM_NR_PARAMS 38
 
 #endif /* __XEN_PUBLIC_HVM_PARAMS_H__ */

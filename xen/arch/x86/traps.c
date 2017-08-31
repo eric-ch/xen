@@ -778,10 +778,18 @@ int cpuid_hypervisor_leaves( uint32_t idx, uint32_t sub_idx,
     switch ( idx )
     {
     case 0:
-        *eax = base + limit; /* Largest leaf */
-        *ebx = XEN_CPUID_SIGNATURE_EBX;
-        *ecx = XEN_CPUID_SIGNATURE_ECX;
-        *edx = XEN_CPUID_SIGNATURE_EDX;
+        /* possibly use XenClient cpuid signature */
+        if (is_hvm_domain(currd) && (currd->arch.hvm_domain.params[HVM_PARAM_XCI_CPUID_SIGNATURE])) {
+            *eax = base + limit; /* Largest leaf */
+            *ebx = XCI_CPUID_SIGNATURE_EBX;
+            *ecx = XCI_CPUID_SIGNATURE_ECX;
+            *edx = XCI_CPUID_SIGNATURE_EDX;
+        } else {
+            *eax = base + limit; /* Largest leaf */
+            *ebx = XEN_CPUID_SIGNATURE_EBX;
+            *ecx = XEN_CPUID_SIGNATURE_ECX;
+            *edx = XEN_CPUID_SIGNATURE_EDX;
+        }
         break;
 
     case 1:
@@ -897,7 +905,6 @@ void pv_cpuid(struct cpu_user_regs *regs)
             __clear_bit(X86_FEATURE_MTRR, &d);
 
         __clear_bit(X86_FEATURE_DTES64 % 32, &c);
-        __clear_bit(X86_FEATURE_MWAIT % 32, &c);
         __clear_bit(X86_FEATURE_DSCPL % 32, &c);
         __clear_bit(X86_FEATURE_VMXE % 32, &c);
         __clear_bit(X86_FEATURE_SMXE % 32, &c);

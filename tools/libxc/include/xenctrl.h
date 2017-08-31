@@ -1344,6 +1344,10 @@ int xc_domain_set_time_offset(xc_interface *xch,
                               uint32_t domid,
                               int32_t time_offset_seconds);
 
+int xc_domain_set_cores_per_socket(xc_interface *xch,
+				   uint32_t domid,
+				   uint32_t cores_per_socket);
+
 int xc_domain_set_tsc_info(xc_interface *xch,
                            uint32_t domid,
                            uint32_t tsc_mode,

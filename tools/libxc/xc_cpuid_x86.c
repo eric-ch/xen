@@ -118,6 +118,7 @@ static void amd_xc_cpuid_policy(
         break;
     }
 
+#if 0 /* Removed by xc-cpuid */
     case 0x80000008:
         /*
          * ECX[15:12] is ApicIdCoreSize: ECX[7:0] is NumberOfCores (minus one).
@@ -126,6 +127,7 @@ static void amd_xc_cpuid_policy(
         regs[2] = ((regs[2] + (1u << 12)) & 0xf000u) |
                   ((regs[2] & 0xffu) << 1) | 1u;
         break;
+#endif
 
     case 0x8000000a: {
         if (!is_nestedhvm) {
@@ -172,13 +174,8 @@ static void intel_xc_cpuid_policy(
         break;
 
     case 0x00000004:
-        /*
-         * EAX[31:26] is Maximum Cores Per Package (minus one).
-         * Update to reflect vLAPIC_ID = vCPU_ID * 2.
-         */
-        regs[0] = (((regs[0] & 0x7c000000u) << 1) | 0x04000000u |
-                   (regs[0] & 0x3ffu));
-        regs[3] &= 0x3ffu;
+        regs[0] &= 0x3FF;
+        regs[3] &= 0x3FF;
         break;
 
     case 0x80000000:
@@ -201,11 +198,6 @@ static void intel_xc_cpuid_policy(
 
     case 0x80000005:
         regs[0] = regs[1] = regs[2] = 0;
-        break;
-
-    case 0x80000008:
-        /* Mask AMD Number of Cores information. */
-        regs[2] = 0;
         break;
     }
 }
@@ -293,12 +285,6 @@ static void xc_cpuid_hvm_policy(
         break;
 
     case 0x00000001:
-        /*
-         * EBX[23:16] is Maximum Logical Processors Per Package.
-         * Update to reflect vLAPIC_ID = vCPU_ID * 2.
-         */
-        regs[1] = (regs[1] & 0x0000ffffu) | ((regs[1] & 0x007f0000u) << 1);
-
         regs[2] &= (bitmaskof(X86_FEATURE_XMM3) |
                     bitmaskof(X86_FEATURE_PCLMULQDQ) |
                     bitmaskof(X86_FEATURE_SSSE3) |
@@ -341,8 +327,7 @@ static void xc_cpuid_hvm_policy(
                     bitmaskof(X86_FEATURE_MMX) |
                     bitmaskof(X86_FEATURE_FXSR) |
                     bitmaskof(X86_FEATURE_XMM) |
-                    bitmaskof(X86_FEATURE_XMM2) |
-                    bitmaskof(X86_FEATURE_HT));
+                    bitmaskof(X86_FEATURE_XMM2));
             
         /* We always support MTRR MSRs. */
         regs[3] |= bitmaskof(X86_FEATURE_MTRR);
@@ -403,7 +388,7 @@ static void xc_cpuid_hvm_policy(
 
     case 0x80000008:
         regs[0] &= 0x0000ffffu;
-        regs[1] = regs[3] = 0;
+        regs[1] = regs[2] = regs[3] = 0;
         break;
 
     case 0x00000002: /* Intel cache info (dumped by AMD policy) */

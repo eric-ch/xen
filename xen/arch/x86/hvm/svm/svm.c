@@ -1542,20 +1542,33 @@ static void svm_fpu_dirty_intercept(void)
         vmcb_set_cr0(vmcb, vmcb_get_cr0(vmcb) & ~X86_CR0_TS);
 }
 
+#define bitmaskof(idx)  (1U << ((idx) & 31))
 static void svm_cpuid_intercept(
     unsigned int *eax, unsigned int *ebx,
     unsigned int *ecx, unsigned int *edx)
 {
     unsigned int input = *eax;
     struct vcpu *v = current;
+    unsigned int cores_per_socket = current->domain->cores_per_socket;
 
     hvm_cpuid(input, eax, ebx, ecx, edx);
 
     switch (input) {
+    case 0x00000001:
+        if ( cores_per_socket > 1 )
+        {
+            *ebx &= 0xFF00FFFF;
+            *ebx |= (2 * cores_per_socket & 0xFF) << 16;
+            *edx |= 0x1 << 28;
+        }
+        break;
     case 0x80000001:
         /* Fix up VLAPIC details. */
         if ( vlapic_hw_disabled(vcpu_vlapic(v)) )
             __clear_bit(X86_FEATURE_APIC & 31, edx);
+        break;
+        if (cores_per_socket > 1)
+            *ecx |= cpufeat_mask(X86_FEATURE_CMP_LEGACY);
         break;
     case 0x8000001c: 
     {
@@ -1575,6 +1588,12 @@ static void svm_cpuid_intercept(
         }
         break;
     }
+    case 0x80000008:
+        /* Make sure Number of CPU core is 1 when HTT=0 */
+        *ecx &= 0xFFFF0F00;
+        if ( cores_per_socket > 1 )
+            *ecx |= (2 * cores_per_socket - 1) & 0xFF;
+        break;
     default:
         break;
     }
