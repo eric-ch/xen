@@ -1247,7 +1247,7 @@ vhd_find_parent(vhd_context_t *ctx, const char *parent, char **_location)
 	location   = NULL;
 	*_location = NULL;
 
-	if (!parent)
+	if (!parent || !strcmp(parent, ""))
 		return -EINVAL;
 
 	if (parent[0] == '/') {
@@ -1779,7 +1779,7 @@ vhd_footer_offset_at_eof(vhd_context_t *ctx, off_t *off)
 {
 	int err;
 	if ((err = vhd_seek(ctx, 0, SEEK_END)))
-		return errno;
+		return err;
 	*off = vhd_position(ctx) - sizeof(vhd_footer_t);
 	return 0;
 }
@@ -2188,7 +2188,7 @@ vhd_write_block(vhd_context_t *ctx, uint32_t block, char *data)
 	if (block >= ctx->bat.entries)
 		return -ERANGE;
 
-	if ((unsigned long)data & ~(VHD_SECTOR_SIZE -1))
+	if ((unsigned long)data & (VHD_SECTOR_SIZE -1))
 		return -EINVAL;
 
 	blk  = ctx->bat.bat[block];

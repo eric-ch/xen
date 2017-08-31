@@ -1177,12 +1177,25 @@ tapdisk_vbd_check_queue(td_vbd_t *vbd)
 	return 0;
 }
 
+static int
+tapdisk_vbd_request_should_retry(td_vbd_request_t *vreq)
+{
+	switch (vreq->error) {
+	case -EPERM:
+	case -ENOSYS:
+		return 0;
+	default:
+		return 1;
+	}
+}
+
 void
 tapdisk_vbd_complete_vbd_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 {
 	if (!vreq->submitting && !vreq->secs_pending) {
 		if (vreq->status == BLKIF_RSP_ERROR &&
 		    vreq->num_retries < TD_VBD_MAX_RETRIES &&
+		    tapdisk_vbd_request_should_retry(vreq) &&
 		    !td_flag_test(vbd->state, TD_VBD_DEAD) &&
 		    !td_flag_test(vbd->state, TD_VBD_SHUTDOWN_REQUESTED))
 			tapdisk_vbd_move_request(vreq, &vbd->failed_requests);
@@ -1390,13 +1403,17 @@ tapdisk_vbd_issue_request(td_vbd_t *vbd, td_vbd_request_t *vreq)
 
 #if 0
 	err = tapdisk_vbd_check_queue(vbd);
-	if (err)
+	if (err) {
+		vreq->error = err;
 		goto fail;
+	}
 #endif
 
 	err = tapdisk_image_check_ring_request(image, req);
-	if (err)
+	if (err) {
+		vreq->error = err;
 		goto fail;
+	}
 
 	for (i = 0; i < req->nr_segments; i++) {
 		nsects = req->seg[i].last_sect - req->seg[i].first_sect + 1;

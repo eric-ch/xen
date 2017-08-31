@@ -42,7 +42,7 @@
 static void
 usage(const char *app, int err)
 {
-	fprintf(stderr, "usage: %s [-D] <-u uuid> <-c control socket>\n", app);
+	fprintf(stderr, "usage: %s [-D don't daemonize] [-h help]\n", app);
 	exit(err);
 }
 
