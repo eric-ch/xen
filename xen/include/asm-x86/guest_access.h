@@ -48,7 +48,7 @@
 /* Cast a guest handle (either XEN_GUEST_HANDLE or XEN_GUEST_HANDLE_PARAM)
  * to the specified type of XEN_GUEST_HANDLE_PARAM. */
 #define guest_handle_cast(hnd, type) ({         \
-    type *_x = (hnd).p;                         \
+    type *_x = (type*) (hnd).p;    \
     (XEN_GUEST_HANDLE_PARAM(type)) { _x };            \
 })
 

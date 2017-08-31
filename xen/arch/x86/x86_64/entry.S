@@ -822,7 +822,7 @@ ENTRY(hypercall_table)
         .quad do_domctl
         .quad do_kexec_op
         .quad do_tmem_op
-        .quad do_ni_hypercall       /* reserved for XenClient */
+        .quad do_v4v_op       /* reserved for XenClient - used for v4v*/
         .quad do_xenpmu_op          /* 40 */
         .rept __HYPERVISOR_arch_0-((.-hypercall_table)/8)
         .quad do_ni_hypercall
@@ -873,7 +873,7 @@ ENTRY(hypercall_args_table)
         .byte 1 /* do_domctl            */
         .byte 2 /* do_kexec             */
         .byte 1 /* do_tmem_op           */
-        .byte 0 /* reserved for XenClient */
+        .byte 6 /* reserved for XenClient - used for v4v */
         .byte 2 /* do_xenpmu_op         */  /* 40 */
         .rept __HYPERVISOR_arch_0-(.-hypercall_args_table)
         .byte 0 /* do_ni_hypercall      */

@@ -14,6 +14,7 @@
 #include <xen/nodemask.h>
 #include <xen/radix-tree.h>
 #include <xen/multicall.h>
+#include <xen/v4v.h>
 #include <xen/tasklet.h>
 #include <xen/mm.h>
 #include <xen/smp.h>
@@ -469,6 +470,10 @@ struct domain
     /* vNUMA topology accesses are protected by rwlock. */
     rwlock_t vnuma_rwlock;
     struct vnuma_info *vnuma;
+
+    /*v4v*/
+    rwlock_t v4v_lock;
+    struct v4v_domain	*v4v;
 };
 
 struct domain_setup_info

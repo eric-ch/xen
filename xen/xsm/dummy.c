@@ -163,4 +163,5 @@ void xsm_fixup_ops (struct xsm_operations *ops)
     set_to_dummy_if_null(ops, pmu_op);
 #endif
     set_to_dummy_if_null(ops, memory_translate);
+    set_to_dummy_if_null(ops, v4v_send);
 }

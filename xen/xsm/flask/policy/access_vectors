@@ -495,3 +495,8 @@ class security
 # remove ocontext label definitions for resources
     del_ocontext
 }
+
+class v4v
+{
+    send
+}

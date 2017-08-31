@@ -253,7 +253,8 @@ struct domain *domain_create(domid_t domid, unsigned int domcr_flags,
 {
     struct domain *d, **pd, *old_hwdom = NULL;
     enum { INIT_xsm = 1u<<0, INIT_watchdog = 1u<<1, INIT_rangeset = 1u<<2,
-           INIT_evtchn = 1u<<3, INIT_gnttab = 1u<<4, INIT_arch = 1u<<5 };
+           INIT_evtchn = 1u<<3, INIT_gnttab = 1u<<4, INIT_arch = 1u<<5,
+           INIT_v4v = 1u<<6 };
     int err, init_status = 0;
     int poolid = CPUPOOLID_NONE;
 
@@ -277,6 +278,7 @@ struct domain *domain_create(domid_t domid, unsigned int domcr_flags,
     spin_lock_init(&d->hypercall_deadlock_mutex);
     INIT_PAGE_LIST_HEAD(&d->page_list);
     INIT_PAGE_LIST_HEAD(&d->xenpage_list);
+    rwlock_init(&d->v4v_lock);
 
     spin_lock_init(&d->node_affinity_lock);
     d->node_affinity = NODE_MASK_ALL;
@@ -347,6 +349,10 @@ struct domain *domain_create(domid_t domid, unsigned int domcr_flags,
             goto fail;
         init_status |= INIT_gnttab;
 
+	if ( v4v_init(d) !=0 )
+	    goto fail;
+	init_status |= INIT_v4v;
+
         poolid = 0;
 
         err = -ENOMEM;
@@ -397,6 +403,8 @@ struct domain *domain_create(domid_t domid, unsigned int domcr_flags,
     xfree(d->pbuf);
     if ( init_status & INIT_arch )
         arch_domain_destroy(d);
+    if ( init_status & INIT_v4v )
+	v4v_destroy(d);
     if ( init_status & INIT_gnttab )
         grant_table_destroy(d);
     if ( init_status & INIT_evtchn )
@@ -613,6 +621,7 @@ int domain_kill(struct domain *d)
         domain_pause(d);
         d->is_dying = DOMDYING_dying;
         spin_barrier(&d->domain_lock);
+	v4v_destroy(d);
         evtchn_destroy(d);
         gnttab_release_mappings(d);
         tmem_destroy(d->tmem_client);

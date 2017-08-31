@@ -721,4 +721,9 @@ static XSM_INLINE int xsm_pmu_op (XSM_DEFAULT_ARG struct domain *d, unsigned int
     }
 }
 
+static XSM_INLINE int xsm_v4v_send(struct domain *d, struct domain *t)
+{
+    return 0;
+}
+
 #endif /* CONFIG_X86 */

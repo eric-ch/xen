@@ -92,7 +92,7 @@ all: headers.chk headers++.chk
 
 PUBLIC_HEADERS := $(filter-out public/arch-% public/dom0_ops.h, $(wildcard public/*.h public/*/*.h) $(public-y))
 
-PUBLIC_ANSI_HEADERS := $(filter-out public/%ctl.h public/xsm/% public/%hvm/save.h, $(PUBLIC_HEADERS))
+PUBLIC_ANSI_HEADERS := $(filter-out public/%ctl.h public/xsm/% public/%hvm/save.h public/v4v.h, $(PUBLIC_HEADERS))
 
 headers.chk: $(PUBLIC_ANSI_HEADERS) Makefile
 	for i in $(filter %.h,$^); do \

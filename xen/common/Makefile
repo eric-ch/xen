@@ -49,6 +49,7 @@ obj-y += timer.o
 obj-y += tmem.o
 obj-y += tmem_xen.o
 obj-y += trace.o
+obj-y += v4v.o
 obj-y += version.o
 obj-y += vm_event.o
 obj-y += vmap.o

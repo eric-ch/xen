@@ -1621,6 +1621,11 @@ static int flask_pmu_op (struct domain *d, unsigned int op)
 }
 #endif /* CONFIG_X86 */
 
+static int flask_v4v_send(struct domain *dom1, struct domain *dom2)
+{
+    return domain_has_perm(dom1, dom2, SECCLASS_V4V, V4V__SEND);
+}
+
 long do_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
 int compat_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
 
@@ -1759,6 +1764,7 @@ static struct xsm_operations flask_ops = {
     .ioport_mapping = flask_ioport_mapping,
     .pmu_op = flask_pmu_op,
 #endif
+    .v4v_send = flask_v4v_send,
 };
 
 static __init void flask_init(void)
