@@ -256,6 +256,8 @@ int vhd_snapshot(const char *snapshot, uint64_t bytes, const char *parent,
 
 int vhd_hidden(vhd_context_t *, int *);
 int vhd_chain_depth(vhd_context_t *, int *);
+int vhd_marker(vhd_context_t *, char *);
+int vhd_set_marker(vhd_context_t *, char);
 
 off_t vhd_position(vhd_context_t *);
 int vhd_seek(vhd_context_t *, off_t, int);

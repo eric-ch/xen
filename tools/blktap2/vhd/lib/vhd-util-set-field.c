@@ -76,7 +76,7 @@ vhd_util_set_field(int argc, char **argv)
 		goto usage;
 	}
 
-	if (strcmp(field, "hidden")) {
+	if (strcmp(field, "hidden") && strcmp(field, "marker")) {
 		printf("invalid field %s\n", field);
 		goto usage;
 	}
@@ -92,9 +92,13 @@ vhd_util_set_field(int argc, char **argv)
 		return err;
 	}
 
-	vhd.footer.hidden = (char)value;
+	if (!strcmp(field, "hidden")) {
+		vhd.footer.hidden = (char)value;
+		err = vhd_write_footer(&vhd, &vhd.footer);
+	} else {
+		err = vhd_set_marker(&vhd, (char)value);
+	}
 
-	err = vhd_write_footer(&vhd, &vhd.footer);
 		
  done:
 	vhd_close(&vhd);

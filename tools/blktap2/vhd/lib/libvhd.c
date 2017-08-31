@@ -2055,6 +2055,44 @@ vhd_write_bat(vhd_context_t *ctx, vhd_bat_t *bat)
 	return err;
 }
 
+static int
+vhd_write_batmap_header(vhd_context_t *ctx, vhd_batmap_t *batmap)
+{
+	int err;
+	size_t size;
+	off64_t off;
+	char *buf = NULL;
+
+	err = vhd_batmap_header_offset(ctx, &off);
+	if (err)
+		goto out;
+
+	size = vhd_bytes_padded(sizeof(batmap->header));
+
+	err = vhd_seek(ctx, off, SEEK_SET);
+	if (err)
+		goto out;
+
+	err = posix_memalign((void **)&buf, VHD_SECTOR_SIZE, size);
+	if (err) {
+		err = -err;
+		buf = NULL;
+		goto out;
+	}
+
+	vhd_batmap_header_out(batmap);
+	memset(buf, 0, size);
+	memcpy(buf, &batmap->header, sizeof(batmap->header));
+
+	err = vhd_write(ctx, buf, size);
+
+out:
+	if (err)
+		VHDLOG("%s: failed writing batmap: %d\n", ctx->file, err);
+	free(buf);
+	return err;
+}
+
 int
 vhd_write_batmap(vhd_context_t *ctx, vhd_batmap_t *batmap)
 {
@@ -3414,4 +3452,40 @@ vhd_io_write(vhd_context_t *ctx, char *buf, uint64_t sec, uint32_t secs)
 		return __vhd_io_fixed_write(ctx, buf, sec, secs);
 
 	return __vhd_io_dynamic_write(ctx, buf, sec, secs);
+}
+
+int
+vhd_marker(vhd_context_t *ctx, char *marker)
+{
+	int err;
+	vhd_batmap_t batmap;
+
+	*marker = 0;
+
+	if (!vhd_has_batmap(ctx))
+		return -ENOSYS;
+
+	err = vhd_read_batmap_header(ctx, &batmap);
+	if (err)
+		return err;
+
+	*marker = batmap.header.marker;
+	return 0;
+}
+
+int
+vhd_set_marker(vhd_context_t *ctx, char marker)
+{
+	int err;
+	vhd_batmap_t batmap;
+
+	if (!vhd_has_batmap(ctx))
+		return -ENOSYS;
+
+	err = vhd_read_batmap_header(ctx, &batmap);
+	if (err)
+		return err;
+
+	batmap.header.marker = marker;
+	return vhd_write_batmap_header(ctx, &batmap);
 }
