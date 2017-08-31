@@ -44,6 +44,15 @@ ifeq ($(VHD_STATIC),y)
 td-util: CFLAGS += -static
 endif
 
+tapdisk2 tapdisk-stream tapdisk-diff: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
+tapdisk2 tapdisk-stream tapdisk-diff: crypto/libxts-aes.a
+
+img2qcow qcow2raw qcow-create: CRYPTLIBS += -lcrypto -Lcrypto -lxts-aes
+img2qcow qcow2raw qcow-create: crypto/libxts-aes.a
+
+crypto/libxts-aes.a: crypto/*.c crypto/*.h
+	$(MAKE) -C crypto libxts-aes.a
+
 PORTABLE-OBJS-y :=
 PORTABLE-OBJS-$(CONFIG_Linux)  += blk_linux.o
 PORTABLE-OBJS-$(CONFIG_NetBSD) += blk_netbsd.o
@@ -76,18 +85,19 @@ BLK-OBJS-y  += aes.o
 BLK-OBJS-y  += md5.o
 BLK-OBJS-y  += $(PORTABLE-OBJS-y)
 BLK-OBJS-y  += $(REMUS-OBJS)
+BLK-OBJS-y  += block-crypto.o
 
 all: $(IBIN) lock-util qcow-util
 
 
 tapdisk2: $(TAP-OBJS-y) $(BLK-OBJS-y) $(MISC-OBJS-y) tapdisk2.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm  $(APPEND_LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm  $(APPEND_LDFLAGS)
 
 tapdisk-client: tapdisk-client.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lrt $(APPEND_LDFLAGS)
 
 tapdisk-stream tapdisk-diff: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm $(APPEND_LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm $(APPEND_LDFLAGS)
 
 td-util: td.o tapdisk-utils.o tapdisk-log.o $(PORTABLE-OBJS-y)
 	$(CC) -o $@ $^ $(LDFLAGS) $(VHDLIBS) $(APPEND_LDFLAGS)
@@ -99,7 +109,7 @@ lock-util: lock.c
 qcow-util: img2qcow qcow2raw qcow-create
 
 img2qcow qcow2raw qcow-create: %: %.o $(TAP-OBJS-y) $(BLK-OBJS-y)
-	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) -lm $(APPEND_LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -lrt -lz $(VHDLIBS) $(AIOLIBS) $(MEMSHRLIBS) $(CRYPTLIBS) -lm $(APPEND_LDFLAGS)
 
 install: all
 	$(INSTALL_DIR) -p $(DESTDIR)$(INST_DIR)
@@ -107,6 +117,7 @@ install: all
 
 clean:
 	rm -rf .*.d *.o *~ xen TAGS $(IBIN) $(LIB) $(LOCK_UTIL) $(QCOW_UTIL)
+	$(MAKE) -C crypto clean
 
 distclean: clean
 

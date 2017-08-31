@@ -59,6 +59,7 @@
 #include "tapdisk-driver.h"
 #include "tapdisk-interface.h"
 #include "tapdisk-disktype.h"
+#include "block-crypto.h"
 
 unsigned int SPB;
 
@@ -176,6 +177,7 @@ struct vhd_request {
 	uint8_t                   op;
 	vhd_flag_t                flags;
 	td_request_t              treq;
+	char                     *orig_buf;
 	struct tiocb              tiocb;
 	struct vhd_state         *state;
 	struct vhd_request       *next;
@@ -653,6 +655,12 @@ __vhd_open(td_driver_t *driver, const char *name, vhd_flag_t flags)
         DBG(TLOG_INFO, "vhd_open: done (sz:%"PRIu64", sct:%"PRIu64
             ", inf:%u)\n",
 	    driver->info.size, driver->info.sector_size, driver->info.info);
+
+	err = vhd_open_crypto(&s->vhd, name);
+	if (err) {
+		DPRINTF("failed to init crypto: %d\n", err);
+		goto fail;
+	}
 
 	if (test_vhd_flag(flags, VHD_FLAG_OPEN_STRICT) && 
 	    !test_vhd_flag(flags, VHD_FLAG_OPEN_RDONLY)) {
@@ -1494,6 +1502,7 @@ schedule_data_write(struct vhd_state *s, td_request_t treq, vhd_flag_t flags)
 	u32 blk = 0, sec = 0;
 	struct vhd_bitmap  *bm = NULL;
 	struct vhd_request *req;
+	char *crypto_buf = NULL;
 
 	if (s->vhd.footer.type == HD_TYPE_FIXED) {
 		offset = vhd_sectors_to_bytes(treq.sec);
@@ -1520,14 +1529,29 @@ schedule_data_write(struct vhd_state *s, td_request_t treq, vhd_flag_t flags)
 	offset  = vhd_sectors_to_bytes(offset);
 
  make_request:
+	if (s->vhd.xts_tfm) {
+		err = posix_memalign((void **)&crypto_buf, VHD_SECTOR_SIZE,
+				     treq.secs * VHD_SECTOR_SIZE);
+		if (err)
+			return -EBUSY;
+	}
 	req = alloc_vhd_request(s);
-	if (!req)
+	if (!req) {
+		if (s->vhd.xts_tfm)
+			free(crypto_buf);
 		return -EBUSY;
+	}
 
 	req->treq  = treq;
 	req->flags = flags;
 	req->op    = VHD_OP_DATA_WRITE;
 	req->next  = NULL;
+
+	if (s->vhd.xts_tfm) {
+		req->orig_buf = req->treq.buf;
+		req->treq.buf = crypto_buf;
+		vhd_crypto_encrypt(&s->vhd, &req->treq, req->orig_buf);
+	}
 
 	if (test_vhd_flag(flags, VHD_FLAG_REQ_UPDATE_BITMAP)) {
 		bm = get_bitmap(s, blk);
@@ -1846,6 +1870,17 @@ signal_completion(struct vhd_request *list, int error)
 
 		err  = (error ? error : r->error);
 		next = r->next;
+		if (s->vhd.xts_tfm) {
+			switch (r->op) {
+			case VHD_OP_DATA_READ:
+				vhd_crypto_decrypt(&s->vhd, &r->treq);
+				break;
+			case VHD_OP_DATA_WRITE:
+				free(r->treq.buf);
+				r->treq.buf = r->orig_buf;
+				break;
+			}
+		}
 		td_complete_request(r->treq, err);
 		DBG(TLOG_DBG, "lsec: 0x%08"PRIx64", blk: 0x%04"PRIx64", "
 		    "err: %d\n", r->treq.sec, r->treq.sec / s->spb, err);

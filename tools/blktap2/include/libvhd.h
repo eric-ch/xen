@@ -138,6 +138,8 @@ struct vhd_batmap {
 	char                      *map;
 };
 
+struct crypto_blkcipher;
+
 struct vhd_context {
 	int                        fd;
 	char                      *file;
@@ -151,6 +153,8 @@ struct vhd_context {
 	vhd_footer_t               footer;
 	vhd_bat_t                  bat;
 	vhd_batmap_t               batmap;
+
+	struct crypto_blkcipher   *xts_tfm;
 };
 
 static inline uint32_t
