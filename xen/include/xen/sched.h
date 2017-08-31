@@ -474,6 +474,10 @@ struct domain
     /*v4v*/
     rwlock_t v4v_lock;
     struct v4v_domain	*v4v;
+
+    unsigned long prev_mfn_shinfo;
+    unsigned long prev_gpfn_shinfo;
+
 };
 
 struct domain_setup_info

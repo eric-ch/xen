@@ -4734,12 +4734,18 @@ int xenmem_add_to_physmap_one(
     unsigned long prev_mfn, mfn = 0, old_gpfn;
     int rc = 0;
     p2m_type_t p2mt;
+    int unmap_shinfo = 0;
+    xen_pfn_t gpfn_new = gpfn;
 
     switch ( space )
     {
         case XENMAPSPACE_shared_info:
             if ( idx == 0 )
                 mfn = virt_to_mfn(d->shared_info);
+            /* unmap shared info page if guest passed INVALID_MFN */
+            if ( gpfn_new == (hvm_guest_x86_mode(current) == 8
+                              ? INVALID_MFN : INVALID_MFN >> 32) )
+                unmap_shinfo = 1;
             break;
         case XENMAPSPACE_grant_table:
             write_lock(&d->grant_table->lock);
@@ -4795,24 +4801,37 @@ int xenmem_add_to_physmap_one(
     {
         if ( page )
             put_page(page);
+
+        if ( unmap_shinfo )
+        {
+            if ( d->prev_mfn_shinfo  != INVALID_MFN &&
+                d->prev_gpfn_shinfo != INVALID_MFN )
+            {
+                gpfn_new = d->prev_gpfn_shinfo;
+                mfn = d->prev_mfn_shinfo;
+            }
+            else
+                printk("unmapping of shared info requested while not mapped\n");
+        }
+
         if ( space == XENMAPSPACE_gmfn || space == XENMAPSPACE_gmfn_range )
             put_gfn(d, gfn);
         return -EINVAL;
     }
 
     /* Remove previously mapped page if it was present. */
-    prev_mfn = mfn_x(get_gfn(d, gpfn, &p2mt));
+    prev_mfn = mfn_x(get_gfn(d, gpfn_new, &p2mt));
     if ( mfn_valid(prev_mfn) )
     {
         if ( is_xen_heap_mfn(prev_mfn) )
             /* Xen heap frames are simply unhooked from this phys slot. */
-            rc = guest_physmap_remove_page(d, gpfn, prev_mfn, PAGE_ORDER_4K);
-        else
+            rc = guest_physmap_remove_page(d, gpfn_new, prev_mfn, PAGE_ORDER_4K);
+        else if ( space != XENMAPSPACE_shared_info )
             /* Normal domain memory is freed, to avoid leaking memory. */
-            rc = guest_remove_page(d, gpfn);
+            rc = guest_remove_page(d, gpfn_new);
     }
     /* In the XENMAPSPACE_gmfn case we still hold a ref on the old page. */
-    put_gfn(d, gpfn);
+    put_gfn(d, gpfn_new);
 
     if ( rc )
         goto put_both;
@@ -4827,12 +4846,27 @@ int xenmem_add_to_physmap_one(
 
     /* Map at new location. */
     if ( !rc )
-        rc = guest_physmap_add_page(d, gpfn, mfn, PAGE_ORDER_4K);
+        rc = guest_physmap_add_page(d, gpfn_new, mfn, PAGE_ORDER_4K);
 
  put_both:
     /* In the XENMAPSPACE_gmfn, we took a ref of the gfn at the top */
     if ( space == XENMAPSPACE_gmfn || space == XENMAPSPACE_gmfn_range )
         put_gfn(d, gfn);
+
+    if ( space == XENMAPSPACE_shared_info )
+    {
+        /* save the shared info mapping to restore, if we are not unmapping */
+        if (!unmap_shinfo)
+        {
+            d->prev_mfn_shinfo = prev_mfn;
+            d->prev_gpfn_shinfo = gpfn_new;
+        }
+        else
+        {
+            d->prev_mfn_shinfo = INVALID_MFN;
+            d->prev_gpfn_shinfo = INVALID_MFN;
+        }
+    }
 
     if ( page )
         put_page(page);

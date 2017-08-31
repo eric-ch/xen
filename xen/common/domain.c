@@ -392,6 +392,9 @@ struct domain *domain_create(domid_t domid, unsigned int domcr_flags,
         spin_unlock(&domlist_update_lock);
     }
 
+    d->prev_mfn_shinfo = INVALID_MFN;
+    d->prev_gpfn_shinfo = INVALID_MFN;
+
     return d;
 
  fail:
