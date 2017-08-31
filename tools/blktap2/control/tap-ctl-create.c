@@ -37,6 +37,12 @@
 int
 tap_ctl_create(const char *params, char **devname)
 {
+	return tap_ctl_create_flags(params, devname, 0);
+}
+
+int
+tap_ctl_create_flags(const char *params, char **devname, int flags)
+{
 	int err, id, minor;
 
 	err = tap_ctl_allocate(&minor, devname);
@@ -53,7 +59,7 @@ tap_ctl_create(const char *params, char **devname)
 	if (err)
 		goto destroy;
 
-	err = tap_ctl_open(id, minor, params);
+	err = tap_ctl_open_flags(id, minor, params, flags);
 	if (err)
 		goto detach;
 

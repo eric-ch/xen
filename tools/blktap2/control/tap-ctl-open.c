@@ -38,6 +38,12 @@
 int
 tap_ctl_open(const int id, const int minor, const char *params)
 {
+	return tap_ctl_open_flags(id, minor, params, 0);
+}
+
+int
+tap_ctl_open_flags(const int id, const int minor, const char *params, int flags)
+{
 	int err;
 	tapdisk_message_t message;
 
@@ -46,6 +52,7 @@ tap_ctl_open(const int id, const int minor, const char *params)
 	message.cookie = minor;
 	message.u.params.storage = TAPDISK_STORAGE_TYPE_DEFAULT;
 	message.u.params.devnum = minor;
+	message.u.params.flags = flags;
 
 	err = snprintf(message.u.params.path,
 		       sizeof(message.u.params.path) - 1, "%s", params);

@@ -534,3 +534,29 @@ tap_ctl_find(const char *type, const char *path, tap_list_t *tap)
 
 	return ret;
 }
+
+int
+tap_ctl_find_pid(int minor)
+{
+	int pid, err;
+	tap_list_t **list, **_entry;
+
+	err = tap_ctl_list(&list);
+	if (err)
+		return err;
+
+	pid = -1;
+
+	for (_entry = list; *_entry != NULL; ++_entry) {
+		tap_list_t *entry  = *_entry;
+
+		if (entry->minor == minor) {
+			pid = entry->pid;
+			break;
+		}
+	}
+
+	tap_ctl_free_list(list);
+
+	return pid >= 0 ? pid : -ENOENT;
+}

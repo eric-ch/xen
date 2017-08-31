@@ -77,11 +77,13 @@ int tap_ctl_get_driver_id(const char *handle);
 int tap_ctl_list(tap_list_t ***list);
 void tap_ctl_free_list(tap_list_t **list);
 int tap_ctl_find(const char *type, const char *path, tap_list_t *tap);
+int tap_ctl_find_pid(int minor);
 
 int tap_ctl_allocate(int *minor, char **devname);
 int tap_ctl_free(const int minor);
 
 int tap_ctl_create(const char *params, char **devname);
+int tap_ctl_create_flags(const char *params, char **devname, int flags);
 int tap_ctl_destroy(const int id, const int minor);
 
 int tap_ctl_spawn(void);
@@ -91,6 +93,7 @@ int tap_ctl_attach(const int id, const int minor);
 int tap_ctl_detach(const int id, const int minor);
 
 int tap_ctl_open(const int id, const int minor, const char *params);
+int tap_ctl_open_flags(const int id, const int minor, const char *params, int flags);
 int tap_ctl_close(const int id, const int minor, const int force);
 
 int tap_ctl_pause(const int id, const int minor);

@@ -31,6 +31,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "tap-ctl.h"
 
@@ -247,26 +249,30 @@ usage:
 static void
 tap_cli_create_usage(FILE *stream)
 {
-	fprintf(stream, "usage: create <-a args> [-d device name]\n");
+	fprintf(stream, "usage: create <-a args> [-d device name] [-R readonly]\n");
 }
 
 static int
 tap_cli_create(int argc, char **argv)
 {
-	int c, err;
+	int c, err, flags;
 	char *args, *devname;
 
+	flags   = 0;
 	args    = NULL;
 	devname = NULL;
 
 	optind = 0;
-	while ((c = getopt(argc, argv, "a:d:h")) != -1) {
+	while ((c = getopt(argc, argv, "a:Rd:h")) != -1) {
 		switch (c) {
 		case 'a':
 			args = optarg;
 			break;
 		case 'd':
 			devname = optarg;
+			break;
+		case 'R':
+			flags |= TAPDISK_MESSAGE_FLAG_RDONLY;
 			break;
 		case '?':
 			goto usage;
@@ -279,7 +285,7 @@ tap_cli_create(int argc, char **argv)
 	if (!args)
 		goto usage;
 
-	err = tap_ctl_create(args, &devname);
+	err = tap_ctl_create_flags(args, &devname, flags);
 	if (!err)
 		printf("%s\n", devname);
 
@@ -293,25 +299,30 @@ usage:
 static void
 tap_cli_destroy_usage(FILE *stream)
 {
-	fprintf(stream, "usage: destroy <-p pid> <-m minor>\n");
+	fprintf(stream, "usage: destroy (<-m minor> [-p pid] | <-d dev>)\n");
 }
 
 static int
 tap_cli_destroy(int argc, char **argv)
 {
 	int c, pid, minor;
+	const char *device;
 
 	pid   = -1;
 	minor = -1;
+	device = NULL;
 
 	optind = 0;
-	while ((c = getopt(argc, argv, "p:m:h")) != -1) {
+	while ((c = getopt(argc, argv, "p:m:d:h")) != -1) {
 		switch (c) {
 		case 'p':
 			pid = atoi(optarg);
 			break;
 		case 'm':
 			minor = atoi(optarg);
+			break;
+		case 'd':
+			device = optarg;
 			break;
 		case '?':
 			goto usage;
@@ -321,8 +332,39 @@ tap_cli_destroy(int argc, char **argv)
 		}
 	}
 
-	if (pid == -1 || minor == -1)
+	if (device) {
+		int maj;
+		struct stat sb;
+
+		if (stat(device, &sb)) {
+			perror("stat");
+			return -errno;
+		}
+
+		maj = tap_ctl_blk_major();
+		if (maj < 0) {
+			fprintf(stderr, "failed to find td major: %d\n", maj);
+			return maj;
+		}
+
+		if (!S_ISBLK(sb.st_mode) || major(sb.st_rdev) != maj) {
+			fprintf(stderr, "invalid device %s\n", device);
+			return -EINVAL;
+		}
+
+		minor = minor(sb.st_rdev);
+	}
+
+	if (minor == -1)
 		goto usage;
+
+	if (pid == -1) {
+		pid = tap_ctl_find_pid(minor);
+		if (pid == -1) {
+			fprintf(stderr, "failed to find pid for %d\n", minor);
+			return pid;
+		}
+	}
 
 	return tap_ctl_destroy(pid, minor);
 
@@ -498,7 +540,7 @@ usage:
 static void
 tap_cli_pause_usage(FILE *stream)
 {
-	fprintf(stream, "usage: pause <-p pid> <-m minor>\n");
+	fprintf(stream, "usage: pause <-m minor> [-p pid]\n");
 }
 
 static int
@@ -526,8 +568,16 @@ tap_cli_pause(int argc, char **argv)
 		}
 	}
 
-	if (pid == -1 || minor == -1)
+	if (minor == -1)
 		goto usage;
+
+	if (pid == -1) {
+		pid = tap_ctl_find_pid(minor);
+		if (pid == -1) {
+			fprintf(stderr, "failed to find pid for %d\n", minor);
+			return pid;
+		}
+	}
 
 	return tap_ctl_pause(pid, minor);
 
@@ -539,7 +589,7 @@ usage:
 static void
 tap_cli_unpause_usage(FILE *stream)
 {
-	fprintf(stream, "usage: unpause <-p pid> <-m minor> [-a args]\n");
+	fprintf(stream, "usage: unpause <-m minor> [-p pid] [-a args]\n");
 }
 
 int
@@ -572,8 +622,16 @@ tap_cli_unpause(int argc, char **argv)
 		}
 	}
 
-	if (pid == -1 || minor == -1)
+	if (minor == -1)
 		goto usage;
+
+	if (pid == -1) {
+		pid = tap_ctl_find_pid(minor);
+		if (pid == -1) {
+			fprintf(stderr, "failed to find pid for %d\n", minor);
+			return pid;
+		}
+	}
 
 	return tap_ctl_unpause(pid, minor, args);
 
@@ -633,21 +691,22 @@ usage:
 static void
 tap_cli_open_usage(FILE *stream)
 {
-	fprintf(stream, "usage: open <-p pid> <-m minor> <-a args>\n");
+	fprintf(stream, "usage: open <-p pid> <-m minor> <-a args> [-R readonly]\n");
 }
 
 static int
 tap_cli_open(int argc, char **argv)
 {
 	const char *args;
-	int c, pid, minor;
+	int c, pid, minor, flags;
 
+	flags = 0;
 	pid   = -1;
 	minor = -1;
 	args  = NULL;
 
 	optind = 0;
-	while ((c = getopt(argc, argv, "a:m:p:h")) != -1) {
+	while ((c = getopt(argc, argv, "a:Rm:p:h")) != -1) {
 		switch (c) {
 		case 'p':
 			pid = atoi(optarg);
@@ -657,6 +716,9 @@ tap_cli_open(int argc, char **argv)
 			break;
 		case 'a':
 			args = optarg;
+			break;
+		case 'R':
+			flags |= TAPDISK_MESSAGE_FLAG_RDONLY;
 			break;
 		case '?':
 			goto usage;
@@ -669,7 +731,7 @@ tap_cli_open(int argc, char **argv)
 	if (pid == -1 || minor == -1 || !args)
 		goto usage;
 
-	return tap_ctl_open(pid, minor, args);
+	return tap_ctl_open_flags(pid, minor, args, flags);
 
 usage:
 	tap_cli_open_usage(stderr);
