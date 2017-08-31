@@ -203,8 +203,12 @@ struct page_info
 #define PGT_locked        PG_mask(1, 9)
 
  /* Count of uses of this frame as its current type. */
-#define PGT_count_width   PG_shift(9)
+#define PGT_count_width   PG_shift(10)
 #define PGT_count_mask    ((1UL<<PGT_count_width)-1)
+
+ /* Pinned by dom0 tools */
+#define _PGC_pinned_by_tools PG_shift(10)
+#define PGC_pinned_by_tools PG_mask(1, 10)
 
  /* Cleared when the owning guest 'frees' this page. */
 #define _PGC_allocated    PG_shift(1)

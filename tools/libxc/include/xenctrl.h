@@ -2853,6 +2853,18 @@ int xc_psr_cat_get_l3_info(xc_interface *xch, uint32_t socket,
 int xc_domain_cacheflush(xc_interface *xch, uint32_t domid,
                          xen_pfn_t start_pfn, xen_pfn_t nr_pfns);
 
+int xc_domain_memory_translate_gpfn_list(xc_interface *xch,
+                                         uint32_t domid,
+                                         unsigned long nr_gpfns,
+                                         xen_pfn_t *gpfn_list,
+                                         xen_pfn_t *mfn_list);
+
+int xc_domain_memory_release_mfn_list(xc_interface *xch,
+                                      uint32_t domid,
+                                      unsigned long nr_mfns,
+                                      xen_pfn_t *mfn_list);
+
+
 #endif /* XENCTRL_H */
 
 /*
