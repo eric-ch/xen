@@ -83,10 +83,12 @@ ROMS += $(ROMBIOS_ROM) $(STDVGA_ROM) $(CIRRUSVGA_ROM) $(ETHERBOOT_ROMS)
 endif
 
 ifeq ($(CONFIG_SEABIOS),y)
-OBJS += seabios.o
+OBJS += seabios.o optionroms.o
 CFLAGS += -DENABLE_SEABIOS
 ifeq ($(SEABIOS_PATH),)
-	SEABIOS_ROM := $(SEABIOS_DIR)/out/bios.bin
+	ifeq ($(SEABIOS_ROM),)
+		SEABIOS_ROM := $(SEABIOS_DIR)/out/bios.bin
+	endif
 else
 	SEABIOS_ROM := $(SEABIOS_PATH)
 endif

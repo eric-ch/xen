@@ -10,7 +10,7 @@ ifeq ($(OVMF_PATH),)
 SUBDIRS-$(CONFIG_OVMF) += ovmf-dir
 endif
 ifeq ($(SEABIOS_PATH),)
-SUBDIRS-$(CONFIG_SEABIOS) += seabios-dir
+#SUBDIRS-$(CONFIG_SEABIOS) += seabios-dir
 endif
 SUBDIRS-$(CONFIG_ROMBIOS) += rombios
 SUBDIRS-$(CONFIG_ROMBIOS) += vgabios
