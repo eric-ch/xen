@@ -441,6 +441,20 @@ fail:
 	return err;
 }
 
+static void
+free_driver_stack(td_vbd_t *vbd)
+{
+	td_vbd_driver_info_t *driver;
+
+	while(!list_empty(&vbd->driver_stack)) {
+		driver = list_entry(vbd->driver_stack.next,
+		    td_vbd_driver_info_t, next);
+		list_del(&driver->next);
+		free(driver->params);
+		free(driver);
+	}
+}
+
 /* this populates a vbd type based on path */
 int
 tapdisk_vbd_parse_stack(td_vbd_t *vbd, const char *path)
@@ -1645,6 +1659,14 @@ tapdisk_vbd_resume_ring(td_vbd_t *vbd)
 	if (!vbd->name) {
 		EPRINTF("resume malloc failed\n");
 		err = -ENOMEM;
+		goto out;
+	}
+
+	/* re-create the driver stack as the path may have changed */
+	free_driver_stack(vbd);
+	err = tapdisk_vbd_parse_stack(vbd, message);
+	if (err) {
+		err = -EINVAL;
 		goto out;
 	}
 
