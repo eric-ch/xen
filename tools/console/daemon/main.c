@@ -25,6 +25,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <sys/resource.h>
 
 #include "xenctrl.h"
@@ -175,10 +176,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!log_dir) {
-		log_dir = strdup("/var/log/xen/console");
-	}
-
 	if (geteuid() != 0) {
 		fprintf(stderr, "%s requires root to run.\n", argv[0]);
 		exit(EPERM);
@@ -187,7 +184,6 @@ int main(int argc, char **argv)
 	signal(SIGHUP, handle_hup);
 
 	openlog("xenconsoled", syslog_option, LOG_DAEMON);
-	setlogmask(syslog_mask);
 
 	increase_fd_limit();
 

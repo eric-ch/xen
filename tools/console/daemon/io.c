@@ -55,9 +55,11 @@
 #define MAX_STRLEN(x) ((sizeof(x) * CHAR_BIT + CHAR_BIT-1) / 10 * 3 + 2)
 
 /* How many events are allowed in each time period */
-#define RATE_LIMIT_ALLOWANCE 30
+#define RATE_LIMIT_ALLOWANCE 300
 /* Duration of each time period in ms */
 #define RATE_LIMIT_PERIOD 200
+/* Syslog buffer size */
+#define SYSLOG_BUFFER_SIZE 1024
 
 extern int log_reload;
 extern int log_guest;
@@ -82,13 +84,14 @@ static unsigned int nr_fds;
 struct buffer {
 	char *data;
 	size_t consumed;
-	size_t size;
-	size_t capacity;
+	size_t size;         /* Amount of data currently in the buffer */
+	size_t capacity;     /* Amount of allocated data for the buffer */
 	size_t max_capacity;
 };
 
 struct domain {
 	int domid;
+	char *name;
 	int master_fd;
 	int master_pollfd_idx;
 	int slave_fd;
@@ -96,6 +99,7 @@ struct domain {
 	bool is_dead;
 	unsigned last_seen;
 	struct buffer buffer;
+	struct buffer slbuffer;
 	struct domain *next;
 	char *conspath;
 	int ring_ref;
@@ -156,6 +160,28 @@ static int write_with_timestamp(int fd, const char *data, size_t sz,
 	return 0;
 }
 
+static void flush_slb(struct domain *dom, struct buffer *slb)
+{
+	syslog(LOG_INFO, "%s (%i): %.*s", dom->name, dom->domid, (int)slb->size, slb->data);
+	slb->size = 0;
+}
+
+static void cutlines(struct domain *dom, struct buffer *b, int i)
+{
+	struct buffer *slb = &dom->slbuffer;
+
+	while (i < b->size) {
+		if (slb->size >= slb->capacity)
+			flush_slb(dom, slb); /* line too long */
+
+		if (!(b->data[i] == '\n' || b->data[i] == '\r'))
+			slb->data[slb->size++] = b->data[i];
+		else if (slb->size > 0)
+			flush_slb(dom, slb); /* line end marker detected */
+		++i;
+	}
+}
+
 static void buffer_append(struct domain *dom)
 {
 	struct buffer *buffer = &dom->buffer;
@@ -170,7 +196,7 @@ static void buffer_append(struct domain *dom)
 	if ((size == 0) || (size > sizeof(intf->out)))
 		return;
 
-	if ((buffer->capacity - buffer->size) < size) {
+	if ((buffer->capacity - buffer->size) < size + 1) {
 		buffer->capacity += (size + 1024);
 		buffer->data = realloc(buffer->data, buffer->capacity);
 		if (buffer->data == NULL) {
@@ -179,9 +205,11 @@ static void buffer_append(struct domain *dom)
 		}
 	}
 
-	while (cons != prod)
-		buffer->data[buffer->size++] = intf->out[
-			MASK_XENCONS_IDX(cons++, intf->out)];
+	while (cons != prod) {
+		char ch = intf->out[MASK_XENCONS_IDX(cons, intf->out)];
+		buffer->data[buffer->size++] = ch;
+		++cons;
+	}
 
 	xen_mb();
 	intf->out_cons = cons;
@@ -208,6 +236,8 @@ static void buffer_append(struct domain *dom)
 			dolog(LOG_ERR, "Write to log failed "
 			      "on domain %d: %d (%s)\n",
 			      dom->domid, errno, strerror(errno));
+	} else {
+		cutlines(dom, buffer, buffer->size - size);
 	}
 
 	if (discard_overflowed_data && buffer->max_capacity &&
@@ -267,7 +297,12 @@ static int create_hv_log(void)
 {
 	char logfile[PATH_MAX];
 	int fd;
-	snprintf(logfile, PATH_MAX-1, "%s/hypervisor.log", log_dir);
+
+	if (!log_dir) {
+		return -1;
+	} else {
+		snprintf(logfile, PATH_MAX-1, "%s/hypervisor.log", log_dir);
+	}
 	logfile[PATH_MAX-1] = '\0';
 
 	fd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0644);
@@ -288,35 +323,58 @@ static int create_hv_log(void)
 	return fd;
 }
 
+static char *safe_xs_read(const char *key, int tries)
+{
+	char *data = NULL;
+	unsigned int len;
+	struct timespec req = { .tv_sec = 0, .tv_nsec = 100000000 }; /* 100 ms */
+	int i;
+
+	for (i = 0; i < tries; i++) {
+		data = xs_read(xs, XBT_NULL, key, &len);
+		if (data && len > 0)
+			break;
+		free(data);
+		nanosleep(&req, NULL);
+	}
+	return data;
+}
+
+static char *name_from_dompath(const char *path)
+{
+	char namepath[64] = { 0 }, *name;
+	strncat( namepath, path , sizeof(namepath) - 1 );
+	strncat( namepath, "/name", sizeof(namepath) - strlen(namepath) - 1 );
+
+	name = safe_xs_read(namepath, 1);
+	/* without any name after 100 tries, just default to unnamed */
+	if (!name)
+		name = strdup("unnamed");
+	return name;
+}
+
 static int create_domain_log(struct domain *dom)
 {
 	char logfile[PATH_MAX];
-	char *namepath, *data, *s;
+	char *dompath;
 	int fd;
-	unsigned int len;
 
-	namepath = xs_get_domain_path(xs, dom->domid);
-	s = realloc(namepath, strlen(namepath) + 6);
-	if (s == NULL) {
-		free(namepath);
+	dompath = xs_get_domain_path(xs, dom->domid);
+	if (!dompath) {
 		return -1;
 	}
-	namepath = s;
-	strcat(namepath, "/name");
-	data = xs_read(xs, XBT_NULL, namepath, &len);
-	free(namepath);
-	if (!data)
-		return -1;
-	if (!len) {
-		free(data);
+	dom->name = name_from_dompath(dompath);
+	free(dompath);
+	if (!dom->name) {
 		return -1;
 	}
-
-	snprintf(logfile, PATH_MAX-1, "%s/guest-%s.log", log_dir, data);
-	free(data);
+	if (!log_dir) {
+		return -1;
+	}
+	snprintf(logfile, PATH_MAX - 1, "%s/%s.log", log_dir, dom->name);
 	logfile[PATH_MAX-1] = '\0';
 
-	fd = open(logfile, O_WRONLY|O_CREAT|O_APPEND, 0644);
+	fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, 0644);
 	if (fd == -1)
 		dolog(LOG_ERR, "Failed to open log %s: %d (%s)",
 		      logfile, errno, strerror(errno));
@@ -472,6 +530,12 @@ static int domain_create_tty(struct domain *dom)
 		goto out;
 
 	if (fcntl(dom->master_fd, F_SETFL, O_NONBLOCK) == -1)
+		goto out;
+
+	memset(&dom->slbuffer, 0, sizeof(dom->slbuffer));
+	dom->slbuffer.capacity = dom->slbuffer.max_capacity = SYSLOG_BUFFER_SIZE;
+	dom->slbuffer.data = malloc(dom->slbuffer.capacity);
+	if (!dom->slbuffer.data)
 		goto out;
 
 	return 1;
@@ -684,6 +748,7 @@ static struct domain *create_domain(int domid)
 	dom->ring_ref = -1;
 	dom->local_port = -1;
 	dom->remote_port = -1;
+	dom->name = NULL;
 
 	if (!watch_domain(dom, true))
 		goto out;
@@ -737,8 +802,16 @@ static void cleanup_domain(struct domain *d)
 	free(d->buffer.data);
 	d->buffer.data = NULL;
 
+	free(d->slbuffer.data);
+	d->slbuffer.data = NULL;
+
 	free(d->conspath);
 	d->conspath = NULL;
+
+        if (d->name) {
+	    free(d->name);
+	    d->name = NULL;
+        }
 
 	remove_domain(d);
 }
@@ -908,7 +981,10 @@ static void handle_xs(void)
 
 static void handle_hv_logs(xc_evtchn *xce_handle, bool force)
 {
-	static char buffer[1024*16];
+	char buffer[1024*16 + 1];
+	static char lbuf[1024*16 + 1];
+	static int loff = 0;
+	int i = 0;
 	char *bufptr = buffer;
 	unsigned int size;
 	static uint32_t index = 0;
@@ -917,25 +993,47 @@ static void handle_hv_logs(xc_evtchn *xce_handle, bool force)
 	if (!force && ((port = xc_evtchn_pending(xce_handle)) == -1))
 		return;
 
-	do
-	{
-		int logret;
+	if (log_hv_fd != -1) {
+		do
+		{
+			int logret;
 
+			size = sizeof(buffer);
+			if (xc_readconsolering(xc, bufptr, &size, 0, 1, &index) != 0 ||
+		    	    size == 0)
+				break;
+
+			if (log_time_hv)
+				logret = write_with_timestamp(log_hv_fd, buffer, size,
+							      &log_time_hv_needts);
+			else
+				logret = write_all(log_hv_fd, buffer, size);
+
+			if (logret < 0)
+				dolog(LOG_ERR, "Failed to write hypervisor log: "
+				      "%d (%s)", errno, strerror(errno));
+		} while (size == sizeof(buffer));
+	} else {
 		size = sizeof(buffer);
-		if (xc_readconsolering(xc, bufptr, &size, 0, 1, &index) != 0 ||
-		    size == 0)
-			break;
-
-		if (log_time_hv)
-			logret = write_with_timestamp(log_hv_fd, buffer, size,
-						      &log_time_hv_needts);
-		else
-			logret = write_all(log_hv_fd, buffer, size);
-
-		if (logret < 0)
-			dolog(LOG_ERR, "Failed to write hypervisor log: "
-				       "%d (%s)", errno, strerror(errno));
-	} while (size == sizeof(buffer));
+		if (xc_readconsolering(xc, bufptr, &size, 0, 1, &index) == 0 && size > 0) {
+			while (i < size) {
+				while ((i < size) &&
+				       (buffer[i] != '\n') && (buffer[i] != '\r')) {
+					lbuf[loff++] = buffer[i++];
+				}
+				if ((buffer[i] == '\n') || (buffer[i] == '\r')) {
+					lbuf[loff] = '\0';
+					++i;
+					if ((i < size) &&
+					    ((buffer[i] == '\n') || (buffer[i] == '\r'))) {
+						++i;
+					}
+					syslog(LOG_INFO, "hypervisor: %s", lbuf);
+					loff = 0;
+				}
+			}
+		}
+        }
 
 	if (port != -1)
 		(void)xc_evtchn_unmask(xce_handle, port);
@@ -1016,8 +1114,6 @@ void handle_io(void)
 			goto out;
 		}
 		log_hv_fd = create_hv_log();
-		if (log_hv_fd == -1)
-			goto out;
 		log_hv_evtchn = xc_evtchn_bind_virq(xce_handle, VIRQ_CON_RING);
 		if (log_hv_evtchn == -1) {
 			dolog(LOG_ERR, "Failed to bind to VIRQ_CON_RING: "
