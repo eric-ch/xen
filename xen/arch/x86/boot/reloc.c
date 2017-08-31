@@ -30,7 +30,10 @@ asm (
     "    .long 0                       \n"
     );
 
+typedef unsigned long long u64;
 typedef unsigned int u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
 #include "../../../include/xen/multiboot.h"
 
 static void *reloc_mbi_struct(void *old, unsigned int bytes)
@@ -93,7 +96,8 @@ multiboot_info_t *reloc(multiboot_info_t *mbi_old)
                    MBI_CMDLINE |
                    MBI_MODULES |
                    MBI_MEMMAP |
-                   MBI_LOADERNAME);
+                   MBI_LOADERNAME |
+                   MBI_FRAMEBUFFER_INFO);
 
     return mbi;
 }
