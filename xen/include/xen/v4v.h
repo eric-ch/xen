@@ -36,6 +36,13 @@ struct v4v_pending_ent
 };
 
 
+struct v4v_viptables_rule_node
+{
+    struct list_head list;
+    struct v4v_addr src;
+    struct v4v_addr dst;
+    uint32_t accept;
+};
 
 struct v4v_ring_info
 {

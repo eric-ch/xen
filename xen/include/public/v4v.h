@@ -94,6 +94,25 @@ typedef struct v4v_addr
 
 DEFINE_XEN_GUEST_HANDLE (v4v_addr_t);
 
+typedef struct v4v_viptables_rule
+{
+    struct v4v_addr src;
+    struct v4v_addr dst;
+    uint32_t accept;
+} V4V_PACKED v4v_viptables_rule_t;
+
+DEFINE_XEN_GUEST_HANDLE (v4v_viptables_rule_t);
+
+#define V4V_VIPTABLES_LIST_SIZE 8
+
+typedef struct v4v_viptables_list
+{
+    struct v4v_viptables_rule rules[V4V_VIPTABLES_LIST_SIZE];
+    uint32_t nb_rules;
+} V4V_PACKED v4v_viptables_list_t;
+
+DEFINE_XEN_GUEST_HANDLE (v4v_viptables_list_t);
+
 typedef struct v4v_ring_id
 {
     struct v4v_addr addr;
@@ -250,6 +269,9 @@ struct v4v_ring_message_header
 /* Identical to V4VOP_send except rather than buf and len it takes
  * an array of v4v_iov_t and a length of the array */
 
+#define V4VOP_viptables_add     6
+#define V4VOP_viptables_del     7
+#define V4VOP_viptables_list    8
 
 #if !defined(__GNUC__)
 #pragma warning(pop)
