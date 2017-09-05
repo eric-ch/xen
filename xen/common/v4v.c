@@ -1749,7 +1749,7 @@ v4v_send (struct domain *src_d, v4v_addr_t * src_addr,
     }
 
   /* XSM: verify if src is allowed to send to dst */
-  if (xsm_v4v_send(src_d, dst_d) != 0)
+  if (xsm_v4v_send(XSM_HOOK, src_d, dst_d) != 0)
     {
       printk(KERN_ERR "V4V: XSM REJECTED %i -> %i\n",
              src_addr->domain, dst_addr->domain);
@@ -1860,7 +1860,7 @@ v4v_sendv (struct domain *src_d, v4v_addr_t * src_addr,
     }
 
   /* XSM: verify if src is allowed to send to dst */
-  if (xsm_v4v_send(src_d, dst_d) != 0)
+  if (xsm_v4v_send(XSM_HOOK, src_d, dst_d) != 0)
     {
       printk(KERN_ERR "V4V: XSM REJECTED %i -> %i\n",
              src_addr->domain, dst_addr->domain);
@@ -1940,7 +1940,11 @@ do_v4v_op (int cmd, XEN_GUEST_HANDLE (void) arg1,
            XEN_GUEST_HANDLE (void) arg3, uint32_t arg4, uint32_t arg5)
 {
   struct domain *d = current->domain;
-  long rc = -EFAULT;
+  long rc;
+
+  rc = xsm_v4v_use(XSM_HOOK, d);
+  if (rc)
+      return rc;
 
 #ifdef V4V_DEBUG
 
@@ -1951,6 +1955,8 @@ do_v4v_op (int cmd, XEN_GUEST_HANDLE (void) arg1,
 #endif
 
   domain_lock (d);
+
+  rc = -EFAULT;
   switch (cmd)
     {
     case V4VOP_register_ring:

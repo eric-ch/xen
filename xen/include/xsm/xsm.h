@@ -193,6 +193,7 @@ struct xsm_operations {
     int (*pmu_op) (struct domain *d, unsigned int op);
 #endif
     int (*v4v_send) (struct domain *dom1, struct domain *dom2);
+    int (*v4v_use) (struct domain *d);
 };
 
 #ifdef XSM_ENABLE
@@ -734,9 +735,14 @@ static inline int xsm_pmu_op (xsm_default_t def, struct domain *d, unsigned int 
     return xsm_ops->pmu_op(d, op);
 }
 
-static inline int xsm_v4v_send(struct domain *d1, struct domain *d2)
+static inline int xsm_v4v_send(xsm_default_t def, struct domain *d1, struct domain *d2)
 {
     return xsm_ops->v4v_send(d1,d2);
+}
+
+static inline int xsm_v4v_use(xsm_default_t def, struct domain *d)
+{
+    return xsm_ops->v4v_use(d);
 }
 
 #endif /* CONFIG_X86 */

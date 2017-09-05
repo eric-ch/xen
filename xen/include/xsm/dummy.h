@@ -721,9 +721,16 @@ static XSM_INLINE int xsm_pmu_op (XSM_DEFAULT_ARG struct domain *d, unsigned int
     }
 }
 
-static XSM_INLINE int xsm_v4v_send(struct domain *d, struct domain *t)
+static XSM_INLINE int xsm_v4v_send(XSM_DEFAULT_ARG struct domain *d, struct domain *t)
 {
-    return 0;
+    XSM_ASSERT_ACTION(XSM_HOOK);
+    return xsm_default_action(action, d, t);
+}
+
+static XSM_INLINE int xsm_v4v_use(XSM_DEFAULT_ARG struct domain *d)
+{
+    XSM_ASSERT_ACTION(XSM_HOOK);
+    return xsm_default_action(action, d, d);
 }
 
 #endif /* CONFIG_X86 */

@@ -1626,6 +1626,11 @@ static int flask_v4v_send(struct domain *dom1, struct domain *dom2)
     return domain_has_perm(dom1, dom2, SECCLASS_V4V, V4V__SEND);
 }
 
+static int flask_v4v_use(struct domain *d)
+{
+    return current_has_perm(d, SECCLASS_V4V, V4V__USE);
+}
+
 long do_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
 int compat_flask_op(XEN_GUEST_HANDLE_PARAM(xsm_op_t) u_flask_op);
 
@@ -1765,6 +1770,7 @@ static struct xsm_operations flask_ops = {
     .pmu_op = flask_pmu_op,
 #endif
     .v4v_send = flask_v4v_send,
+    .v4v_use = flask_v4v_use,
 };
 
 static __init void flask_init(void)
