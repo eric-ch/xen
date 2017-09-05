@@ -4816,6 +4816,26 @@ static void emulate_unmap_dest(struct vcpu *v,
     atomic_inc(&v->domain->arch.paging.shadow.gtable_dirty_version);
 }
 
+/*
+ * Routine to make sh_x86_emulate_write appropriate to use for copying the
+ * results of instruction emulation back to guest memory - these
+ * typically require 64-bit, 32-bit and 16-bit writes to be atomic
+ * whereas memcpy is only atomic for 64-bit writes. This is still
+ * not 100% correct since copies larger than 64-bits will not be
+ * atomic for the last 2-6 bytes but should be good enough for
+ * instruction emulation
+ */
+static inline void __sh_atomic_write(
+    void *to, void *from, int count)
+{
+    if (count == sizeof(uint32_t))
+        *(uint32_t *)to = *(uint32_t *)from;
+    else if (count == sizeof(uint16_t))
+        *(uint16_t *)to = *(uint16_t *)from;
+    else
+        memcpy(to, from, count);
+}
+
 static int
 sh_x86_emulate_write(struct vcpu *v, unsigned long vaddr, void *src,
                      u32 bytes, struct sh_emulate_ctxt *sh_ctxt)
@@ -4831,7 +4851,7 @@ sh_x86_emulate_write(struct vcpu *v, unsigned long vaddr, void *src,
         return (long)addr;
 
     paging_lock(v->domain);
-    memcpy(addr, src, bytes);
+    __sh_atomic_write(addr, src, bytes);
 
     if ( tb_init_done )
     {
