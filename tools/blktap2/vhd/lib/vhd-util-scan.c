@@ -772,7 +772,7 @@ vhd_util_scan_open(vhd_context_t *vhd, struct vhd_image *image)
 	if (target_volume(image->target->type) || !(flags & VHD_SCAN_PRETTY))
 		image->name = target->name;
 	else {
-		image->name = realpath(target->name, NULL);
+		image->name = vhd_realpath(target->name, NULL);
 		if (!image->name) {
 			image->name    = target->name;
 			image->message = "resolving name";

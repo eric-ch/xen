@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+char *vhd_realpath(const char *path, char *resolved_path);
+
 #include "relative-path.h"
 
 #define sfree(ptr)         \
@@ -229,14 +231,14 @@ relative_path_to(char *from, char *to, int *err)
 		return NULL;
 	}
 
-	to_absolute = realpath(to, NULL);
+	to_absolute = vhd_realpath(to, NULL);
 	if (!to_absolute) {
 		EPRINTF("failed to get absolute path of %s\n", to);
 		*err = -errno;
 		goto out;
 	}
 
-	from_absolute = realpath(from, NULL);
+	from_absolute = vhd_realpath(from, NULL);
 	if (!from_absolute) {
 		EPRINTF("failed to get absolute path of %s\n", from);
 		*err = -errno;

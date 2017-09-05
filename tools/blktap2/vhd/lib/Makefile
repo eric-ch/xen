@@ -24,7 +24,7 @@ ifeq ($(CONFIG_LIBICONV),y)
 LIBS            += -liconv
 endif
 
-LIBS            += -lcrypto
+LIBS            += -lcrypto -licbinn_resolved -ldl
 
 LIB-SRCS        := libvhd.c
 LIB-SRCS        += libvhd-journal.c

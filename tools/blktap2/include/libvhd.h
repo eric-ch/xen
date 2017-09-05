@@ -124,8 +124,19 @@ typedef struct vhd_bat             vhd_bat_t;
 typedef struct vhd_batmap          vhd_batmap_t;
 typedef struct dd_batmap_hdr       vhd_batmap_header_t;
 typedef struct prt_loc             vhd_parent_locator_t;
+typedef struct vhd_devops          vhd_devops_t;
 typedef struct vhd_context         vhd_context_t;
 typedef uint32_t                   vhd_flag_creat_t;
+
+struct vhd_devops {
+	off_t (*position)          (vhd_context_t *);
+	int (*seek)                (vhd_context_t *, off64_t, int);
+	int (*read)                (vhd_context_t *, void *, size_t);
+	int (*write)               (vhd_context_t *, void *, size_t);
+	int (*pread)               (vhd_context_t *, void *, size_t, off64_t);
+	int (*pwrite)              (vhd_context_t *, void *, size_t, off64_t);
+	void (*close)              (vhd_context_t *);
+};
 
 struct vhd_bat {
 	uint32_t                   spb;
@@ -154,7 +165,11 @@ struct vhd_context {
 	vhd_bat_t                  bat;
 	vhd_batmap_t               batmap;
 
+	vhd_devops_t              *devops;
+
 	struct crypto_blkcipher   *xts_tfm;
+
+	uint64_t                   offset;
 };
 
 static inline uint32_t
@@ -330,5 +345,9 @@ int vhd_write_block(vhd_context_t *, uint32_t block, char *data);
 
 int vhd_io_read(vhd_context_t *, char *, uint64_t, uint32_t);
 int vhd_io_write(vhd_context_t *, char *, uint64_t, uint32_t);
+
+char *vhd_realpath(const char *path, char *resolved_path);
+struct ICBINN_struct * vhd_icbinn_key(void);
+struct ICBINN_struct * vhd_icbinn_vhd(void);
 
 #endif

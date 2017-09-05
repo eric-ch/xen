@@ -21,7 +21,7 @@ ifeq ($(VHD_STATIC),y)
 CFLAGS            += -static
 endif
 
-LIBS              := -Llib -lvhd
+LIBS              := -Llib -lvhd -licbinn_resolved -ldl -lpthread
 LIBS              += -luuid -lcrypto
 
 all: subdirs-all build
