@@ -35,7 +35,7 @@ x86_64 := y
 shadow-paging ?= y
 bigmem        ?= n
 
-CFLAGS += -mno-red-zone -mno-sse -fpic
+CFLAGS += -mno-red-zone -mno-sse -fpic -mfpmath=387
 CFLAGS += -fno-asynchronous-unwind-tables
 # -fvisibility=hidden reduces -fpic cost, if it's available
 ifneq ($(call cc-option,$(CC),-fvisibility=hidden,n),n)
