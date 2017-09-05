@@ -20,6 +20,7 @@ SUBDIRS-$(CONFIG_BLKTAP2) += blktap2
 SUBDIRS-$(CONFIG_NetBSD) += xenbackendd
 SUBDIRS-y += libfsimage
 SUBDIRS-$(CONFIG_Linux) += libvchan
+SUBDIRS-$(CONFIG_X86) += xen-libhvm
 
 # do not recurse in to a dir we are about to delete
 ifneq "$(MAKECMDGOALS)" "distclean"

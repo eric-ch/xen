@@ -1,0 +1,19 @@
+This package contains a helper library for reading ACPI
+and SMBIOS firmware values from the host system for use
+with the HVM guest firmware pass-through feature in Xen.
+
+The contents:
+
+./libhvm:
+A shared library that can be built within the Xen
+source tree. It should be places under tools/firmware
+and built/installed from there. It creates:
+
+/usr/include/xenhvm.h - public header
+/usr/lib/libxenhvm.so.* - shared libs
+
+./biospt
+A simple test app than can use the library to generate
+ACPI and SMBIOS firmware files that can be used with the
+firmware pass-through feature.
+
