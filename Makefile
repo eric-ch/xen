@@ -25,7 +25,14 @@ mini-os-dir:
 			$(MINIOS_UPSTREAM_URL) \
 			$(MINIOS_UPSTREAM_REVISION) \
 			$(XEN_ROOT)/extras/mini-os ; \
+	fi ; \
+	if patch -N --dry-run --silent \
+	    -p1 -d $(XEN_ROOT)/extras/mini-os \
+	    < $(XEN_ROOT)/stubdom/minios-link-to-libgcc-a-to-fix-build-with-gcc7.patch; then \
+		patch -d $(XEN_ROOT)/extras/mini-os \
+		    -p1 < $(XEN_ROOT)/stubdom/minios-link-to-libgcc-a-to-fix-build-with-gcc7.patch ; \
 	fi
+
 
 .PHONY: mini-os-dir-force-update
 mini-os-dir-force-update: mini-os-dir
@@ -34,6 +41,12 @@ mini-os-dir-force-update: mini-os-dir
 		cd extras/mini-os-remote; \
 		$(GIT) fetch origin; \
 		$(GIT) reset --hard $(MINIOS_UPSTREAM_REVISION); \
+	fi ; \
+	if patch -N --dry-run --silent \
+	    -p1 -d $(XEN_ROOT)/extras/mini-os \
+	    < $(XEN_ROOT)/stubdom/minios-link-to-libgcc-a-to-fix-build-with-gcc7.patch; then \
+		patch -d $(XEN_ROOT)/extras/mini-os \
+		    -p1 < $(XEN_ROOT)/stubdom/minios-link-to-libgcc-a-to-fix-build-with-gcc7.patch ; \
 	fi
 
 export XEN_TARGET_ARCH

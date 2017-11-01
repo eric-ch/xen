@@ -1,0 +1,26 @@
+gcc7 generates a call to __udivmoddi4 ...
+
+stubdom/mini-os-x86_32-grub/mini-os.o: In function `_strtoll_r':
+stubdom/newlib-x86_32/i686-xen-elf/newlib/libc/stdlib/../../../../../newlib-1.16.0/newlib/libc/stdlib/strtoll_r.c:110: undefined reference to `__udivmoddi4'
+make[2]: *** [Makefile:167: stubdom/mini-os-x86_32-grub/mini-os] Error 1
+
+... which the linker only finds if libgcc.a is provided on the commandline.
+
+Signed-off-by: Olaf Hering <olaf@aepfle.de>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index ef8559b..b9c1336 100644
+--- a/Makefile
++++ b/Makefile
+@@ -162,7 +162,7 @@
+ 	$(CPP) $(ASFLAGS) -P $< -o $@
+
+ $(OBJ_DIR)/$(TARGET): $(OBJS) $(APP_O) arch_lib $(OBJ_DIR)/$(TARGET_ARCH_DIR)/minios-$(MINIOS_TARGET_ARCH).lds
+-	$(LD) -r $(LDFLAGS) $(HEAD_OBJ) $(APP_O) $(OBJS) $(LDARCHLIB) $(LDLIBS) -o $@.o
++	$(LD) -r $(LDFLAGS) $(HEAD_OBJ) $(APP_O) $(OBJS) $(LDARCHLIB) $(LDLIBS) $$(gcc -print-libgcc-file-name $(CFLAGS)) -o $@.o
+ 	$(OBJCOPY) -w -G $(GLOBAL_PREFIX)* -G _start $@.o $@.o
+ 	$(LD) $(LDFLAGS) $(LDFLAGS_FINAL) $@.o $(EXTRA_OBJS) -o $@
+ 	gzip -f -9 -c $@ >$@.gz
