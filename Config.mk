@@ -269,7 +269,9 @@ MINIOS_UPSTREAM_URL ?= git://xenbits.xen.org/mini-os.git
 endif
 OVMF_UPSTREAM_REVISION ?= 5920a9d16b1ab887c2858224316a98e961d71b05
 QEMU_UPSTREAM_REVISION ?= qemu-xen-4.9.0
-MINIOS_UPSTREAM_REVISION ?= xen-RELEASE-4.9.0
+# GCC7 requires:
+# d991bdb lib/math.c: implement __udivmoddi4
+MINIOS_UPSTREAM_REVISION ?= d991bdbc062248221511ecb795617c36b37e1d2e
 # Wed Feb 22 11:03:37 2017 +0000
 # Include libxendevicemodel with libxc
 
