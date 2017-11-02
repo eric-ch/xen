@@ -24,6 +24,12 @@ mini-os-dir:
 			$(MINIOS_UPSTREAM_URL) \
 			$(MINIOS_UPSTREAM_REVISION) \
 			$(XEN_ROOT)/extras/mini-os ; \
+	fi ; \
+	if patch -N --dry-run --silent \
+		-p1 -d $(XEN_ROOT)/extras/mini-os \
+		< $(XEN_ROOT)/stubdom/0001-lib-math.c-implement-__divmoddi4.patch; then \
+		patch -d $(XEN_ROOT)/extras/mini-os \
+			-p1 < $(XEN_ROOT)/stubdom/0001-lib-math.c-implement-__divmoddi4.patch ; \
 	fi
 
 .PHONY: mini-os-dir-force-update

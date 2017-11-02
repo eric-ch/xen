@@ -1,0 +1,55 @@
+From eaed5ace749ecbabeafa67f69163497c9f798ab3 Mon Sep 17 00:00:00 2001
+From: Eric Chanudet <chanudete@ainfosec.com>
+Date: Wed, 1 Nov 2017 23:55:21 -0400
+Subject: [PATCH] lib/math.c: implement __divmoddi4
+
+Some code compiled by gcc 7 requires this.
+
+xen-git/stubdom/mini-os-x86_32-grub/mini-os.o: In function `blkfront_posix_rwop':
+xen-git/extras/mini-os-remote/blkfront.c:624: undefined reference to `__divmoddi4'
+
+Signed-off-by: Eric Chanudet <chanudete@ainfosec.com>
+---
+ lib/math.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/lib/math.c b/lib/math.c
+index b98cc1d..8400eea 100644
+--- a/lib/math.c
++++ b/lib/math.c
+@@ -434,3 +434,32 @@ __moddi3(quad_t a, quad_t b)
+ 	(void)__qdivrem(ua, ub, &ur);
+ 	return (neg ? -ur : ur);
+ }
++
++/*
++ * Returns the quotient and places remainder in r
++ */
++quad_t
++__divmoddi4(quad_t a, quad_t b, quad_t *r)
++{
++	u_quad_t ua, ub;
++	quad_t v;
++	int neg;
++
++	if (a < 0)
++		ua = -(u_quad_t)a, neg = 1;
++	else
++		ua = a, neg = 0;
++	if (b < 0)
++		ub = -(u_quad_t)b, neg ^= 1;
++	else
++		ub = b;
++
++	v = (quad_t)__udivmoddi4(a, b, (u_quad_t *)r);
++	if (neg) {
++		v = -v;
++		if (r)
++			*r = -(*r);
++	}
++	return v;
++}
++
+-- 
+2.14.2
+
