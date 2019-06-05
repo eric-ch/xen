@@ -787,6 +787,8 @@ ringbuf_insert(const struct domain *d, struct argo_ring_info *ring_info,
     if ( ret )
         return ret;
 
+    *out_len = len;
+
     /*
      * Upper bound check the message len against the ring size.
      * The message must not fill the ring; there must be at least one slot
@@ -982,8 +984,6 @@ ringbuf_insert(const struct domain *d, struct argo_ring_info *ring_info,
      * An XSM policy control over level of confidentiality required
      * versus performance cost could be added to decide that here.
      */
-
-    *out_len = len;
 
     return ret;
 }
