@@ -2050,7 +2050,10 @@ sendv(struct domain *src_d, xen_argo_addr_t *src_addr,
         {
             argo_dprintk("argo_ringbuf_sendv failed, EAGAIN\n");
             /* requeue to issue a notification when space is there */
-            ret = pending_requeue(dst_d, ring_info, src_id.domain_id, len);
+            if (pending_requeue(dst_d, ring_info, src_id.domain_id, len)) {
+                argo_dprintk("pending_requeue failed, ENOMEM.\n");
+                ret = -ENOMEM;
+            }
         }
 
         spin_unlock(&ring_info->L3_lock);
