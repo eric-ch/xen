@@ -1907,7 +1907,8 @@ _hidden int libxl__blktap_enabled(libxl__gc *gc);
  */
 _hidden char *libxl__blktap_devpath(libxl__gc *gc,
                                     const char *disk,
-                                    libxl_disk_format format);
+                                    libxl_disk_format format,
+                                    char *keydir);
 
 /* libxl__device_destroy_tapdisk:
  *   Destroys any tapdisk process associated with the backend represented
