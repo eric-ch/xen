@@ -954,7 +954,9 @@ void libxl__initiate_device_generic_remove(libxl__egc *egc,
     STATE_AO_GC(aodev->ao);
     xs_transaction_t t = 0;
     char *be_path = libxl__device_backend_path(gc, aodev->dev);
+    char *fe_path = libxl__device_frontend_path(gc, aodev->dev);
     char *state_path = GCSPRINTF("%s/state", be_path);
+    char *fe_state_path = GCSPRINTF("%s/state", fe_path);
     char *online_path = GCSPRINTF("%s/online", be_path);
     const char *state;
     libxl_dominfo info;
@@ -1029,6 +1031,11 @@ void libxl__initiate_device_generic_remove(libxl__egc *egc,
             rc = libxl__xs_write_checked(gc, t, state_path, GCSPRINTF("%d", XenbusStateClosing));
             if (rc) {
                 LOGD(ERROR, domid, "unable to write to xenstore path %s", state_path);
+                goto out;
+            }
+            rc = libxl__xs_write_checked(gc, t, fe_state_path, GCSPRINTF("%d", XenbusStateClosed));
+            if (rc) {
+                LOGD(ERROR, domid, "unable to write to xenstore path %s", fe_state_path);
                 goto out;
             }
         }
