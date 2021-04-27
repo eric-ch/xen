@@ -177,8 +177,8 @@ endif
 ifeq ($(CONFIG_BLKTAP2),y)
 CFLAGS_libblktapctl = -I$(XEN_BLKTAP2)/control -I$(XEN_BLKTAP2)/include $(CFLAGS_xeninclude)
 SHDEPS_libblktapctl =
-LDLIBS_libblktapctl = $(SHDEPS_libblktapctl) $(XEN_BLKTAP2)/control/libblktapctl$(libextension)
-SHLIB_libblktapctl  = $(SHDEPS_libblktapctl) -Wl,-rpath-link=$(XEN_BLKTAP2)/control
+LDLIBS_libblktapctl ?= $(SHDEPS_libblktapctl) $(XEN_BLKTAP2)/control/.libs/libblktapctl$(libextension)
+SHLIB_libblktapctl  = $(SHDEPS_libblktapctl) -Wl,-rpath-link=$(XEN_BLKTAP2)/control/.libs
 else
 CFLAGS_libblktapctl =
 SHDEPS_libblktapctl =
