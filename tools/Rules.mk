@@ -25,7 +25,7 @@ XEN_XENLIGHT       = $(XEN_ROOT)/tools/libxl
 XEN_XLUTIL         = $(XEN_XENLIGHT)
 XEN_XENSTORE       = $(XEN_ROOT)/tools/xenstore
 XEN_LIBXENSTAT     = $(XEN_ROOT)/tools/xenstat/libxenstat/src
-XEN_BLKTAP2        = $(XEN_ROOT)/tools/blktap2
+XEN_BLKTAP2        = $(XEN_ROOT)/tools/blktap3
 XEN_LIBVCHAN       = $(XEN_ROOT)/tools/libvchan
 
 CFLAGS_xeninclude = -I$(XEN_INCLUDE)
@@ -187,7 +187,7 @@ SHLIB_libblktapctl  =
 PKG_CONFIG_REMOVE += xenblktapctl
 endif
 
-CFLAGS_libxenlight = -I$(XEN_XENLIGHT) $(CFLAGS_libxenctrl) $(CFLAGS_xeninclude)
+CFLAGS_libxenlight = -I$(XEN_XENLIGHT) $(CFLAGS_libxenctrl) $(CFLAGS_libblktapctl) $(CFLAGS_xeninclude)
 SHDEPS_libxenlight = $(SHLIB_libxenctrl) $(SHLIB_libxenstore) $(SHLIB_libblktapctl)
 LDLIBS_libxenlight = $(SHDEPS_libxenlight) $(XEN_XENLIGHT)/libxenlight$(libextension)
 SHLIB_libxenlight  = $(SHDEPS_libxenlight) -Wl,-rpath-link=$(XEN_XENLIGHT)
