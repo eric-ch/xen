@@ -1,0 +1,4 @@
+[submodule "tools/blktap3"]
+	path = tools/blktap3
+	url = https://github.com/eric-ch/blktap-1
+	branch = openxt-blktap3-dirty
