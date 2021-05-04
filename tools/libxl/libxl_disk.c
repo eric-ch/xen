@@ -56,7 +56,7 @@ static void disk_eject_xswatch_callback(libxl__egc *egc, libxl__ev_xswatch *w,
             "/local/domain/%d/backend/%" TOSTRING(BACKEND_STRING_SIZE)
            "[a-z]/%*d/%*d",
            &disk->backend_domid, backend_type);
-    if (!strcmp(backend_type, "tap") || !strcmp(backend_type, "vbd")) {
+    if (!strcmp(backend_type, "tap") || !strcmp(backend_type, "vbd") || !strcmp(backend_type, "vbd3")) {
         disk->backend = LIBXL_DISK_BACKEND_TAP;
     } else if (!strcmp(backend_type, "qdisk")) {
         disk->backend = LIBXL_DISK_BACKEND_QDISK;
@@ -188,7 +188,7 @@ static int libxl__device_from_disk(libxl__gc *gc, uint32_t domid,
             device->backend_kind = LIBXL__DEVICE_KIND_VBD;
             break;
         case LIBXL_DISK_BACKEND_TAP:
-            device->backend_kind = LIBXL__DEVICE_KIND_VBD;
+            device->backend_kind = LIBXL__DEVICE_KIND_VBD3;
             break;
         case LIBXL_DISK_BACKEND_QDISK:
             device->backend_kind = LIBXL__DEVICE_KIND_QDISK;
@@ -310,7 +310,6 @@ static void device_disk_add(libxl__egc *egc, uint32_t domid,
             case LIBXL_DISK_BACKEND_PHY:
                 dev = disk->pdev_path;
 
-        do_backend_phy:
                 flexarray_append(back, "params");
                 flexarray_append(back, dev);
 
@@ -322,27 +321,29 @@ static void device_disk_add(libxl__egc *egc, uint32_t domid,
                 break;
 
             case LIBXL_DISK_BACKEND_TAP:
-                if (dev == NULL) {
-                    dev = libxl__blktap_devpath(gc, disk->pdev_path,
-                                                disk->format);
-                    if (!dev) {
-                        LOGD(ERROR, domid, "Failed to get blktap devpath for %p",
-                             disk->pdev_path);
-                        rc = ERROR_FAIL;
-                        goto out;
+                dev = libxl__blktap_devpath(gc, disk->pdev_path,
+                                            disk->format);
+                if (!dev) {
+                     LOGD(ERROR, domid, "failed to get blktap devpath for %s: %s\n",
+                          disk->pdev_path, strerror(rc));
+                     rc = ERROR_FAIL;
+                     goto out;
+                }
+                LOG(DEBUG,"\nBLKTAP3_DEBUG: dev path = %s \n", dev);
+                if (!disk->script && disk->backend_domid == LIBXL_TOOLSTACK_DOMID) {
+                    int major, minor;
+                    if (!libxl__device_physdisk_major_minor(dev, &major, &minor)) {
+                        LOG(DEBUG, "\nBLKTAP3_DEBUG: major:minor = %x:%x\n",major,minor);
+                        flexarray_append_pair(back, "physical-device",
+                                GCSPRINTF("%x:%x", major, minor));
                     }
                 }
                 flexarray_append(back, "tapdisk-params");
                 flexarray_append(back, GCSPRINTF("%s:%s",
                     libxl__device_disk_string_of_format(disk->format),
                     disk->pdev_path));
+                break;
 
-                /* tap backends with scripts are rejected by
-                 * libxl__device_disk_set_backend */
-                assert(!disk->script);
-
-                /* now create a phy device to export the device to the guest */
-                goto do_backend_phy;
             case LIBXL_DISK_BACKEND_QDISK:
                 flexarray_append(back, "params");
                 flexarray_append(back, GCSPRINTF("%s:%s",
@@ -539,6 +540,16 @@ static int libxl__disk_from_xenstore(libxl__gc *gc, const char *libxl_path,
         goto cleanup;
     }
     libxl_string_to_backend(ctx, tmp, &(disk->backend));
+
+    /* NOTE: Below workaround is required while dealing with iso hotswap.
+     * Trying to fix this inside libxl_string_to_backend() will break the
+     * initial disk setup during domain start-up.
+     */
+    tmp = libxl__xs_read(gc, XBT_NULL,
+                         GCSPRINTF("%s/tapdisk-params", libxl_path));
+    if (tmp && strcmp(tmp, "")) {
+    	disk->backend = LIBXL_DISK_BACKEND_TAP;
+    }
 
     disk->vdev = xs_read(ctx->xsh, XBT_NULL,
                          GCSPRINTF("%s/dev", libxl_path), &len);
@@ -763,6 +774,7 @@ int libxl_cdrom_change(libxl_ctx *ctx, uint32_t domid, char *iso, libxl_device_d
 
     libxl__ao_complete(egc, ao, 0);
 out:
+    libxl_device_disk_dispose(&disk_empty);
     if (lock) libxl__unlock_domain_userdata(lock);
     if (rc) return AO_CREATE_FAIL(rc);
     return AO_INPROGRESS;

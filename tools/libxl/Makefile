@@ -48,9 +48,9 @@ LIBXLU_LIBS = $(LDLIBS_libxenlight)
 
 LIBXL_OBJS-y = osdeps.o libxl_paths.o libxl_bootloader.o flexarray.o
 ifeq ($(CONFIG_BLKTAP2),y)
-LIBXL_OBJS-y += libxl_blktap2.o
+LIBXL_OBJS-y += libxl_blktap3.o
 else
-LIBXL_OBJS-y += libxl_noblktap2.o
+LIBXL_OBJS-y += libxl_noblktap3.o
 endif
 
 ifeq ($(CONFIG_LIBNL),y)
