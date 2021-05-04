@@ -832,12 +832,6 @@ int epte_get_entry_emt(struct domain *d, unsigned long gfn, mfn_t mfn,
         return MTRR_TYPE_UNCACHABLE;
     }
 
-    if ( !has_iommu_pt(d) && !cache_flush_permitted(d) )
-    {
-        *ipat = 1;
-        return MTRR_TYPE_WRBACK;
-    }
-
     for ( i = 0; i < (1ul << order); i++ )
     {
         if ( is_xen_heap_page(mfn_to_page(mfn_add(mfn, i))) )
@@ -858,6 +852,12 @@ int epte_get_entry_emt(struct domain *d, unsigned long gfn, mfn_t mfn,
     }
     if ( gmtrr_mtype == -EADDRNOTAVAIL )
         return -1;
+
+    if ( !has_iommu_pt(d) && !cache_flush_permitted(d) )
+    {
+        *ipat = 1;
+        return MTRR_TYPE_WRBACK;
+    }
 
     gmtrr_mtype = is_hvm_domain(d) && v ?
                   get_mtrr_type(&v->arch.hvm.mtrr,
