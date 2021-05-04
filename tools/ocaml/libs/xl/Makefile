@@ -62,7 +62,9 @@ libs: $(LIBS)
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xenlight
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xenlight META $(INTF) $(LIBS) *.a *.so *.cmx
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+	    -ldconf ignore xenlight META $(INTF) $(LIBS) \
+	    $(wildcard *.a) $(wildcard *.so) $(wildcard *.cmx)
 
 .PHONY: uninstall
 uninstall:

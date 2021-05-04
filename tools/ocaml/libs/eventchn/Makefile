@@ -25,7 +25,9 @@ OCAML_LIBRARY = xeneventchn
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xeneventchn
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xeneventchn META $(INTF) $(LIBS) *.a *.so *.cmx
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xeneventchn META $(INTF) $(LIBS) \
+		$(wildcard *.a) $(wildcard *.so) $(wildcard *.cmx)
 
 .PHONY: uninstall
 uninstall:

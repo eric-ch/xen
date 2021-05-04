@@ -43,7 +43,10 @@ xenbus.cmo : $(foreach obj, $(OBJS), $(obj).cmo)
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xenbus
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xenbus META $(LIBS) xenbus.cmo xenbus.cmi xenbus.cmx *.a *.so
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xenbus META $(LIBS) \
+		xenbus.cmo xenbus.cmi xenbus.cmx \
+		$(wildcard *.a) $(wildcard *.so)
 
 .PHONY: uninstall
 uninstall:

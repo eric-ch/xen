@@ -56,7 +56,9 @@ _xtl_levels.ml.in _xtl_levels.mli.in _xtl_levels.inc: genlevels.py $(XEN_ROOT)/t
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	ocamlfind remove -destdir $(OCAMLDESTDIR) xentoollog
-	ocamlfind install -destdir $(OCAMLDESTDIR) -ldconf ignore xentoollog META $(INTF) $(LIBS) *.a *.so *.cmx
+	ocamlfind install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xentoollog META $(INTF) $(LIBS) \
+		$(wildcard *.a) $(wildcard *.so) $(wildcard *.cmx)
 
 .PHONY: uninstall
 uninstall:

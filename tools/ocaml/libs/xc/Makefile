@@ -25,7 +25,9 @@ libs: $(LIBS)
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xenctrl
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xenctrl META $(INTF) $(LIBS) *.a *.so *.cmx
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xenctrl META $(INTF) $(LIBS) \
+		$(wildcard *.a) $(wildcard *.so) $(wildcard *.cmx)
 
 .PHONY: uninstall
 uninstall:

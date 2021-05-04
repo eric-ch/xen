@@ -37,7 +37,10 @@ xenstore.cmo : $(foreach obj, $(OBJS), $(obj).cmo)
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xenstore
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xenstore META $(LIBS) xenstore.cmo xenstore.cmi xenstore.cmx *.a
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xenstore META $(LIBS) \
+		xenstore.cmo xenstore.cmi xenstore.cmx \
+		$(wildcard *.a)
 
 .PHONY: uninstall
 uninstall:

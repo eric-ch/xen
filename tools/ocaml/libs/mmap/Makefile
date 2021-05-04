@@ -20,7 +20,9 @@ OCAML_LIBRARY = xenmmap
 install: $(LIBS) META
 	mkdir -p $(OCAMLDESTDIR)
 	$(OCAMLFIND) remove -destdir $(OCAMLDESTDIR) xenmmap
-	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) -ldconf ignore xenmmap META $(INTF) $(LIBS) *.a *.so *.cmx
+	$(OCAMLFIND) install -destdir $(OCAMLDESTDIR) \
+		-ldconf ignore xenmmap META $(INTF) $(LIBS) \
+		$(wildcard *.a) $(wildcard *.so) $(wildcard *.cmx)
 
 .PHONY: uninstall
 uninstall:
