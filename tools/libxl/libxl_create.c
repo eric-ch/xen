@@ -750,6 +750,11 @@ retry_transaction:
     libxl__xs_writev(gc, t, dom_path, info->xsdata);
     libxl__xs_writev(gc, t, GCSPRINTF("%s/platform", dom_path), info->platformdata);
 
+    if(d_config->b_info.display_depth)
+        xs_write(ctx->xsh, t, GCSPRINTF("%s/platform/restrictdisplaydepth", dom_path), "1", 1);
+    if(d_config->b_info.display_res)
+        xs_write(ctx->xsh, t, GCSPRINTF("%s/platform/restrictdisplayres", dom_path), "1", 1);
+
     xs_write(ctx->xsh, t, GCSPRINTF("%s/control/platform-feature-multiprocessor-suspend", dom_path), "1", 1);
     xs_write(ctx->xsh, t, GCSPRINTF("%s/control/platform-feature-xs_reset_watches", dom_path), "1", 1);
 
@@ -1435,16 +1440,11 @@ static void domcreate_launch_dm(libxl__egc *egc, libxl__multidev *multidev,
     {
         libxl__device_console console;
         libxl__device device;
-        libxl_device_vkb vkb;
 
         init_console_info(gc, &console, 0);
         console.backend_domid = state->console_domid;
         libxl__device_console_add(gc, domid, &console, state, &device);
         libxl__device_console_dispose(&console);
-
-        libxl_device_vkb_init(&vkb);
-        libxl__device_add(gc, domid, &libxl__vkb_devtype, &vkb);
-        libxl_device_vkb_dispose(&vkb);
 
         dcs->sdss.dm.guest_domid = domid;
         if (libxl_defbool_val(d_config->b_info.device_model_stubdomain))
