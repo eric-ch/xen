@@ -364,15 +364,9 @@ int main(void)
     bios_module = get_module_entry(hvm_start_info, "firmware");
     if ( bios_module )
     {
-        const struct hvm_modlist_entry *ipxe;
-        uint32_t ipxe_paddr = 0;
         uint32_t paddr = bios_module->paddr;
 
-        ipxe = get_module_entry(hvm_start_info, "ipxe");
-        if ( ipxe )
-            ipxe_paddr = ipxe->paddr;
-
-        bios->bios_load(bios, (void *)paddr, bios_module->size, (void*)ipxe_paddr);
+        bios->bios_load(bios, (void *)paddr, bios_module->size, NULL);
     }
 #ifdef ENABLE_ROMBIOS
     else if ( bios == &rombios_config )
