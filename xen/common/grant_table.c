@@ -1616,6 +1616,7 @@ fault:
     return -EFAULT;
 }
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
 static void
 unmap_and_replace(
     struct gnttab_unmap_and_replace *op,
@@ -1680,6 +1681,7 @@ fault:
         unmap_common_complete(&common[i]);
     return -EFAULT;
 }
+#endif
 
 static int
 gnttab_populate_status_frames(struct domain *d, struct grant_table *gt,
@@ -2080,6 +2082,7 @@ gnttab_query_size(
     return 0;
 }
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
 /*
  * Check that the given grant reference (rd,ref) allows 'ld' to transfer
  * ownership of a page frame. If so, lock down the grant entry.
@@ -2361,6 +2364,7 @@ gnttab_transfer(
 
     return 0;
 }
+#endif
 
 /*
  * Undo acquire_grant_for_copy().  This has no effect on page type and
@@ -3286,6 +3290,7 @@ gnttab_get_version(XEN_GUEST_HANDLE_PARAM(gnttab_get_version_t) uop)
     return 0;
 }
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
 static s16
 swap_grant_ref(grant_ref_t ref_a, grant_ref_t ref_b)
 {
@@ -3372,6 +3377,7 @@ gnttab_swap_grant_ref(XEN_GUEST_HANDLE_PARAM(gnttab_swap_grant_ref_t) uop,
     }
     return 0;
 }
+#endif
 
 static int cache_flush(const gnttab_cache_flush_t *cflush, grant_ref_t *cur_ref)
 {
@@ -3533,6 +3539,7 @@ do_grant_table_op(
         break;
     }
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
     case GNTTABOP_unmap_and_replace:
     {
         XEN_GUEST_HANDLE_PARAM(gnttab_unmap_and_replace_t) unmap =
@@ -3548,6 +3555,7 @@ do_grant_table_op(
         }
         break;
     }
+#endif
 
     case GNTTABOP_setup_table:
         rc = gnttab_setup_table(
@@ -3555,6 +3563,7 @@ do_grant_table_op(
         ASSERT(rc <= 0);
         break;
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
     case GNTTABOP_transfer:
     {
         XEN_GUEST_HANDLE_PARAM(gnttab_transfer_t) transfer =
@@ -3570,6 +3579,7 @@ do_grant_table_op(
         }
         break;
     }
+#endif
 
     case GNTTABOP_copy:
     {
@@ -3609,6 +3619,7 @@ do_grant_table_op(
         rc = gnttab_get_version(guest_handle_cast(uop, gnttab_get_version_t));
         break;
 
+#ifdef CONFIG_GRANT_TABLE_EXOTIC
     case GNTTABOP_swap_grant_ref:
     {
         XEN_GUEST_HANDLE_PARAM(gnttab_swap_grant_ref_t) swap =
@@ -3624,6 +3635,7 @@ do_grant_table_op(
         }
         break;
     }
+#endif
 
     case GNTTABOP_cache_flush:
     {
