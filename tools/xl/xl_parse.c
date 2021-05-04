@@ -1528,6 +1528,7 @@ void parse_config_data(const char *config_source,
     if (!xlu_cfg_get_long(config, "max_event_channels", &l, 0))
         b_info->event_channels = l;
 
+    xlu_cfg_replace_string (config, "crypto_key_dir", &b_info->crypto_key_dir, 0);
     xlu_cfg_replace_string (config, "kernel", &b_info->kernel, 0);
     xlu_cfg_replace_string (config, "ramdisk", &b_info->ramdisk, 0);
     xlu_cfg_replace_string (config, "device_tree", &b_info->device_tree, 0);
@@ -1957,6 +1958,13 @@ void parse_config_data(const char *config_source,
             parse_disk_config(&config, buf2, disk);
 
             free(buf2);
+
+            if (d_config->b_info.crypto_key_dir) {
+                replace_string(&disk->crypto_key_dir,
+                               d_config->b_info.crypto_key_dir);
+            } else {
+                disk->crypto_key_dir = NULL;
+            }
         }
     }
 

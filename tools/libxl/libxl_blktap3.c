@@ -64,7 +64,8 @@ int libxl__blktap_enabled(libxl__gc *gc)
 }
 
 char *libxl__blktap_devpath(libxl__gc *gc, const char *disk,
-		libxl_disk_format format)
+		libxl_disk_format format,
+		char *keydir)
 {
     const char *type = NULL;
     char *params, *devname = NULL;
@@ -86,7 +87,12 @@ char *libxl__blktap_devpath(libxl__gc *gc, const char *disk,
 
 	/* TODO Should we worry about return codes other than ENOENT? */
 
-    params = libxl__sprintf(gc, "%s:%s", type, disk);
+    if (!keydir || !strncmp(keydir, "", 1))
+        setenv("TAPDISK3_CRYPTO_KEYDIR", "/config/platform-crypto-keys", 1);
+    else
+        setenv("TAPDISK3_CRYPTO_KEYDIR", keydir, 1);
+
+    params = GCSPRINTF("%s:%s", type, disk);
 
     err = tap_ctl_create(params, &devname, flags, -1, 0, 0, NULL, NULL);
     if (!err) {

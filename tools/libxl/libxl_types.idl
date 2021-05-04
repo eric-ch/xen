@@ -506,6 +506,9 @@ libxl_domain_build_info = Struct("domain_build_info",[
     ("cpuid",           libxl_cpuid_policy_list),
     ("blkdev_start",    string),
 
+    # directory containing the crypto keys for the VM's disks
+    ("crypto_key_dir", string),
+
     ("vnuma_nodes", Array(libxl_vnode_info, "num_vnuma_nodes")),
 
     ("max_grant_frames",    uint32, {'init_val': 'LIBXL_MAX_GRANT_DEFAULT'}),
@@ -700,7 +703,8 @@ libxl_device_disk = Struct("device_disk", [
     ("colo_port", integer),
     ("colo_export", string),
     ("active_disk", string),
-    ("hidden_disk", string)
+    ("hidden_disk", string),
+    ("crypto_key_dir", string)
     ])
 
 libxl_device_nic = Struct("device_nic", [

@@ -322,7 +322,8 @@ static void device_disk_add(libxl__egc *egc, uint32_t domid,
 
             case LIBXL_DISK_BACKEND_TAP:
                 dev = libxl__blktap_devpath(gc, disk->pdev_path,
-                                            disk->format);
+                                            disk->format,
+                                            disk->crypto_key_dir);
                 if (!dev) {
                      LOGD(ERROR, domid, "failed to get blktap devpath for %s: %s\n",
                           disk->pdev_path, strerror(rc));

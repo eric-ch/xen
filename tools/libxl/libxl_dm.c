@@ -1820,7 +1820,7 @@ static int libxl__build_device_model_args_new(libxl__gc *gc,
                  */
                 if (disks[i].backend == LIBXL_DISK_BACKEND_TAP)
                     target_path = libxl__blktap_devpath(gc, disks[i].pdev_path,
-                                                        disks[i].format);
+                                                        disks[i].format, disks[i].crypto_key_dir);
                 else
                     target_path = libxl__device_disk_find_local_path(gc,
                                                  guest_domid, &disks[i], true);
