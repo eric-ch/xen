@@ -1,0 +1,13 @@
+git submodule init
+git submodule update --remote
+
+./configure --disable-qemu-traditional --disable-xen --disable-stubdom --disable-docs --prefix=/opt/xen/usr --sbindir=/opt/xen/usr/bin --libdir=/opt/xen/usr/lib --with-system-seabios=/usr/share/seabios/bios-256k.bin --with-system-ovmf=/usr/share/qemu/OVMF.fd --enable-blktap2 PYTHON=/usr/bin/python2
+
+cd tools/blktap3
+autoreconf -i
+autoreconf -i
+./configure --libexec=/usr/lib/blktap3 CFLAGS=-DOPEN_XT -I$(pwd)../../tools/include -I$(pwd)../../tools/libs/toollog/include -I$(pwd)../../tools/libxc/include -I$(pwd)../../tools/xenstore/include LDFLAGS=-L$(pwd)../../tools/libxc -L$(pwd)../../tools/libs/toollog -L$(pwd)../../tools/xenstore -Wl,-rpath-link=$(pwd)../../tools/libxc -Wl,-rpath-link=$(pwd)../../tools/libs/call -Wl,-rpath-link=$(pwd)../../tools/libs/evtchn -Wl,-rpath-link=$(pwd)../../tools/libs/foreignmemory -Wl,-rpath-link=$(pwd)../../tools/libs/devicemodel -Wl,-rpath-link=$(pwd)../../tools/libs/gnttab -Wl,-rpath-link=$(pwd)../../tools/libs/toolcore -Wl,-rpath-link=$(pwd)../../tools/libs/toollog -Wl,-rpath-link=$(pwd)../../tools/xenstore
+
+cd ../..
+
+make -j9
